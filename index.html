@@ -2602,7 +2602,6 @@ function renderReview(review) {
     </div>
     ${wellDoneHtml}
     ${mistakesHtml}
-    ${sentencesHtml}
     ${review.tips_for_tomorrow ? `
       <div class="review-section">
         <h3>💡 Tomorrow's Focus</h3>
@@ -2673,20 +2672,31 @@ function showHistoryDay(date) {
           </div>
           <div class="cs-meta">${escapeHtml(c.model_used || '')} · ${dur}</div>
           <div id="hist-conv-detail-${date}-${ci}" style="display:none;margin-top:10px;border-top:1px solid var(--warm-gray-2);padding-top:10px;">
-            ${c.exchanges ? c.exchanges.map(e => `
-              <div class="transcript-item ${e.role === 'user' ? 'user-turn' : ''}">
-                <div class="ti-role">${e.role === 'ai' ? 'Oliver/Emma' : 'You'}</div>
-                <div>${escapeHtml(e.text)}</div>
-              </div>
-            `).join('') : ''}
+            ${c.exchanges ? c.exchanges.map(e => {
+              if (e.role === 'ai') return `
+                <div class="transcript-item">
+                  <div class="ti-role">Oliver/Emma</div>
+                  <div style="font-size:0.88rem;">${escapeHtml(e.text)}</div>
+                </div>`;
+              // User turn — find matching correction
+              const mistake = (c.review?.mistakes || []).find(m =>
+                m.what_user_said && e.text && m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
+              );
+              return `
+                <div class="transcript-item user-turn">
+                  <div class="ti-role">You</div>
+                  <div class="sent-pair-wrong" style="font-size:0.88rem;text-decoration:none;color:#c62828;">✗ ${escapeHtml(e.text)}</div>
+                  ${mistake ? `<div class="sent-pair-correct" style="font-size:0.88rem;margin-top:4px;">✓ ${diffHighlight(e.text, mistake.correction)}</div>` : ''}
+                </div>`;
+            }).join('') : ''}
             ${c.review ? `
               <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--warm-gray-2);">
-                <strong style="font-size:0.85rem;">Feedback:</strong>
-                <p style="font-size:0.83rem;color:var(--text-secondary);margin-top:4px;">${escapeHtml(c.review.overall_feedback || '')}</p>
+                <p style="font-size:0.83rem;color:var(--text-secondary);">${escapeHtml(c.review.overall_feedback || '')}</p>
                 ${c.review.tips_for_tomorrow ? `<p style="font-size:0.82rem;color:var(--teal);margin-top:6px;">💡 ${escapeHtml(c.review.tips_for_tomorrow)}</p>` : ''}
               </div>
             ` : ''}
-            <div style="margin-top:10px;">
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="copyColoredTable('${date}', ${ci})">📋 Copy colored table → Sheets</button>
               <button class="btn btn-secondary btn-sm" onclick="exportConvCSV('${date}', ${ci})">📥 Export CSV</button>
             </div>
           </div>
@@ -2696,14 +2706,26 @@ function showHistoryDay(date) {
   }
 
   if (sents.length > 0) {
-    html += '<h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:16px 0 8px;">Sentences</h3>';
+    html += '<h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:16px 0 8px;">Today\'s Sentences</h3>';
     html += sents.map((s, i) => `
-      <div style="background:var(--warm-gray-1);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:0.88rem;">
+      <div style="background:var(--warm-gray-1);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
         <div style="font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:4px;">${escapeHtml(s.sentence)}</div>
-        <div style="font-size:0.78rem;color:var(--text-muted);">${escapeHtml(s.situation || '')}
-          ${s.practised ? ' · ✓ Practised' : ''}
-          ${s.used_in_conversation ? ' · 💬 Used in conversation' : ''}
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;">${escapeHtml(s.situation || '')}
+          ${s.practised ? ' · ✓ Practised' : ''}${s.used_in_conversation ? ' · 💬 Used' : ''}
         </div>
+        ${s.vocabulary && s.vocabulary.length > 0 ? `
+          <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-top:4px;">
+            <thead><tr>
+              <th style="text-align:left;padding:3px 6px;background:var(--warm-gray-2);border-radius:4px 0 0 0;">Word/Phrase</th>
+              <th style="text-align:left;padding:3px 6px;background:var(--warm-gray-2);border-radius:0 4px 0 0;">Meaning</th>
+            </tr></thead>
+            <tbody>${s.vocabulary.map(v => `
+              <tr>
+                <td style="padding:3px 6px;border-bottom:1px solid var(--warm-gray-2);font-weight:600;color:var(--teal);">${escapeHtml(v.word||'')}</td>
+                <td style="padding:3px 6px;border-bottom:1px solid var(--warm-gray-2);color:var(--text-secondary);">${escapeHtml(v.meaning||'')}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>` : ''}
       </div>
     `).join('');
   }
@@ -2719,6 +2741,82 @@ function toggleHistoryConv(date, idx) {
 function showHistoryList() {
   document.getElementById('history-list-view').style.display = '';
   document.getElementById('history-day-view').classList.remove('active');
+}
+
+// Build inline-styled diff HTML for Google Sheets paste
+function buildDiffHtml(original, corrected) {
+  const origWords = new Set(
+    original.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/)
+  );
+  return corrected.split(/\s+/).map(word => {
+    const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
+    if (origWords.has(clean))
+      return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
+    return `<span style="color:#1a535c;font-weight:bold;background:#e0f4f4;padding:0 2px;">${escapeHtml(word)}</span>`;
+  }).join(' ');
+}
+
+async function copyColoredTable(date, idx) {
+  const conv  = state.data.conversations[date]?.[idx];
+  const sents = state.data.sentences[date] || [];
+  if (!conv) return;
+
+  const exchanges = conv.exchanges || [];
+  const mistakes  = conv.review?.mistakes || [];
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
+
+  let convRows = '';
+  let sno = 1;
+  for (let i = 0; i < exchanges.length; i++) {
+    const e = exchanges[i];
+    if (e.role !== 'user') continue;
+    const aiQ = i > 0 ? exchanges[i-1].text : '';
+    const mistake = mistakes.find(m =>
+      m.what_user_said && e.text &&
+      m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
+    );
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
+    convRows += `<tr>
+      ${td(sno++)}
+      ${td(escapeHtml(aiQ))}
+      ${td(escapeHtml(e.text), 'color:#c62828;')}
+      ${td(correctHtml)}
+      ${td(escapeHtml(mistake?.explanation || ''), 'color:#555;font-size:0.9em;')}
+    </tr>`;
+  }
+
+  let sentRows = '';
+  sents.forEach((s, i) => {
+    const vocab = (s.vocabulary || []).map(v => `<b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}`).join('<br>');
+    sentRows += `<tr>
+      ${td(i+1)}
+      ${td(`<b>${escapeHtml(s.sentence)}</b>`)}
+      ${td(escapeHtml(s.situation || ''), 'color:#555;')}
+      ${td(vocab || '—')}
+    </tr>`;
+  });
+
+  const html = `
+    <p style="font-family:Arial;font-size:13px;font-weight:bold;">📋 Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</p>
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;"><thead><tr>
+      ${th('#')}${th("Oliver's Question")}${th("What You Said")}${th("Better Way (changed words highlighted)")}${th("Why")}
+    </tr></thead><tbody>${convRows}</tbody></table>
+    ${sentRows ? `
+    <br><p style="font-family:Arial;font-size:13px;font-weight:bold;">📚 Today's Sentences</p>
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;"><thead><tr>
+      ${th('#')}${th("Sentence")}${th("Situation")}${th("Vocabulary")}
+    </tr></thead><tbody>${sentRows}</tbody></table>` : ''}
+  `;
+
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) })
+    ]);
+    toast('✅ Copied! Now paste into Google Sheets with Ctrl+V', 'success', 5000);
+  } catch(e) {
+    toast('Copy failed — use Chrome on desktop for this feature.', 'error');
+  }
 }
 
 function exportConvCSV(date, idx) {
