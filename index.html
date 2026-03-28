@@ -2696,7 +2696,6 @@ function showHistoryDay(date) {
             ` : ''}
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn btn-primary btn-sm" onclick="copyColoredTable('${date}', ${ci})">📋 Copy to Google Sheets</button>
-              <button class="btn btn-secondary btn-sm" onclick="downloadConvXls('${date}', ${ci})">📥 Download .xls (full colors)</button>
             </div>
           </div>
         </div>
@@ -2844,7 +2843,7 @@ async function copyColoredTable(date, idx) {
       ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
     </tr>`;
   }
-  const html = `<meta charset='utf-8'><google-sheets-html-origin>
+  const html = `<meta charset='utf-8'>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
       ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>`;
