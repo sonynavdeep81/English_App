@@ -2867,43 +2867,22 @@ function downloadConvXls(date, idx) {
 }
 
 async function copyColoredTable(date, idx) {
-  const conv  = state.data.conversations[date]?.[idx];
+  const conv = state.data.conversations[date]?.[idx];
   if (!conv) return;
-  const exchanges = conv.exchanges || [];
-  const mistakes  = conv.review?.mistakes || [];
-  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
-  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
-  let convRows = '';
-  let sno = 1;
-  const norm = s => (s || '').toLowerCase().replace(/[.,!?;:'"]/g, '').trim();
-  for (let i = 0; i < exchanges.length; i++) {
-    const e = exchanges[i];
-    if (e.role !== 'user') continue;
-    const turnMistakes = mistakes.filter(m =>
-      m.what_user_said && e.text && (
-        norm(m.what_user_said).slice(0, 40) === norm(e.text).slice(0, 40) ||
-        norm(e.text).includes(norm(m.what_user_said).slice(0, 20))
-      )
-    );
-    const SEP = '<br><br>';
-    const wrongHtml    = turnMistakes.length > 0 ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
-    const correctHtml  = turnMistakes.length > 0
-      ? turnMistakes.map(m => buildDiffHtml(e.text, m.correction)).join(SEP)
-      : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
-    const changedHtml  = turnMistakes.map(m => escapeHtml(getChangedWords(e.text, m.correction))).filter(Boolean).join(SEP);
-    const whyHtml      = turnMistakes.map(m => buildWhyHtml(m)).filter(Boolean).join(SEP);
-    convRows += `<tr>
-      ${td(sno++)}
-      ${td(wrongHtml)}
-      ${td(correctHtml)}
-      ${td(changedHtml, changedHtml ? 'color:#e65100;white-space:pre-wrap;' : '')}
-      ${td(whyHtml, 'white-space:pre-wrap;')}
-    </tr>`;
-  }
+  const mistakes = conv.review?.mistakes || [];
+  if (!mistakes.length) { toast('No corrections to copy for this session.', 'warning'); return; }
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-family:Arial;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-family:Arial;font-size:11pt;${extra}">${s}</td>`;
+  const rows = mistakes.map(m => `<tr>
+    ${td(`<span style="color:#c62828;">${escapeHtml(m.what_user_said || '')}</span>`)}
+    ${td(`<span style="color:#2d7a2d;font-weight:600;">${escapeHtml(m.correction || '')}</span>`)}
+    ${td(m.is_collocation ? `<span style="background:#fff3e0;color:#e65100;padding:2px 6px;border-radius:4px;font-weight:600;">📌 ${escapeHtml(m.collocation_note || 'Fixed phrase')}</span>` : '—')}
+    ${td(escapeHtml(m.explanation || ''), 'color:var(--text-secondary);font-size:0.9em;')}
+  </tr>`).join('');
   const html = `<meta charset='utf-8'><google-sheets-html-origin>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
-      ${th('#')}${th("What You Said")}${th("Better Way")}${th("Changed Words")}${th("Why")}
-    </tr></thead><tbody>${convRows}</tbody></table>`;
+      ${th("What You Said")}${th("Better Way")}${th("Collocation")}${th("Why")}
+    </tr></thead><tbody>${rows}</tbody></table>`;
   try {
     await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'})})]);
     toast('✅ Copied! Paste into Google Sheets with Ctrl+V', 'success', 5000);
