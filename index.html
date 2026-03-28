@@ -683,6 +683,8 @@
     .mistakes-table tr:last-child td { border-bottom: none; }
     .mistake-original { color: #c62828; }
     .mistake-correction { color: #2d7a2d; font-weight: 500; }
+    .diff-added { color: #1a535c; font-weight: 700; background: #e0f4f4; border-radius: 3px; padding: 0 2px; }
+    .collocation-badge { display: inline-block; background: #fff3e0; color: #e65100; font-size: 0.75rem; font-weight: 600; border-radius: 4px; padding: 2px 6px; }
 
     .tip-box { background: linear-gradient(135deg, var(--teal-pale), #f0f9fa); border: 1px solid var(--teal); border-radius: var(--radius); padding: 14px 16px; }
     .tip-box p { font-size: 0.9rem; color: var(--text-secondary); }
@@ -2422,7 +2424,12 @@ ${notesBlock ? `Observer notes: ${notesBlock}` : ''}
 ${sentList ? `Today's target sentences (check if Learner used any):\n${sentList}` : ''}
 
 Provide your analysis in this exact JSON format and nothing else (no markdown, no backticks, no preamble):
-{"overall_rating":"7","overall_feedback":"...","mistakes":[{"what_user_said":"...","issue":"...","correction":"...","explanation":"...","ai_question":"..."}],"well_done":["..."],"sentences_used":["..."],"sentences_missed":["..."],"tips_for_tomorrow":"..."}`;
+{"overall_rating":"7","overall_feedback":"...","mistakes":[{"what_user_said":"...","issue":"grammar/vocabulary/collocation/phrasing","correction":"the natural British English way to say it","explanation":"...","ai_question":"...","is_collocation":false,"collocation_note":""}],"well_done":["..."],"sentences_used":["..."],"sentences_missed":["..."],"tips_for_tomorrow":"..."}
+
+For each mistake:
+- "correction" must always be the complete, natural British English version of what the learner said — never partial
+- "is_collocation": set to true if the error involves words that must always go together as a fixed phrase (e.g. "do exercise" not "go for exercise", "make a decision" not "take a decision")
+- "collocation_note": if is_collocation is true, write the fixed phrase to remember (e.g. "do exercise / do some exercise")`;
 
   const result = await callLLM(
     state.settings.convProvider,
@@ -2433,6 +2440,17 @@ Provide your analysis in this exact JSON format and nothing else (no markdown, n
   );
 
   return parseJSON(result.text);
+}
+
+function diffHighlight(original, corrected) {
+  const origWords = new Set(
+    original.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/)
+  );
+  return corrected.split(/\s+/).map(word => {
+    const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
+    if (origWords.has(clean)) return escapeHtml(word);
+    return `<span class="diff-added">${escapeHtml(word)}</span>`;
+  }).join(' ');
 }
 
 function renderReview(review) {
@@ -2468,12 +2486,13 @@ function renderReview(review) {
       <h3>🔍 Corrections</h3>
       <div class="overflow-table">
         <table class="mistakes-table">
-          <thead><tr><th>What You Said</th><th>Better Way</th><th>Why</th></tr></thead>
+          <thead><tr><th>What You Said</th><th>Better Way</th><th>Collocation</th><th>Why</th></tr></thead>
           <tbody>
             ${review.mistakes.map(m => `
               <tr>
                 <td><span class="mistake-original">${escapeHtml(m.what_user_said || '')}</span></td>
-                <td><span class="mistake-correction">${escapeHtml(m.correction || '')}</span></td>
+                <td><span class="mistake-correction">${diffHighlight(m.what_user_said || '', m.correction || '')}</span></td>
+                <td style="font-size:0.8rem;">${m.is_collocation ? `<span class="collocation-badge">📌 ${escapeHtml(m.collocation_note || 'Fixed phrase')}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
                 <td style="color:var(--text-secondary);font-size:0.8rem;">${escapeHtml(m.explanation || '')}</td>
               </tr>
             `).join('')}
