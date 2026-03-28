@@ -2304,7 +2304,7 @@ async function sendUserTurn(text) {
     hideTypingIndicator();
     if (err && err.type === 'rate_limit' && !state.convEnded) {
       // Auto-retry after 15s for rate limit
-      toast('⏳ Rate limited — retrying in 15 seconds...', 'warning');
+      toast('⏳ Rate limited — retrying in 15 seconds...', 'warning', 16000);
       const statusEl = document.getElementById('mic-status');
       if (statusEl) statusEl.textContent = 'Rate limited — retrying in 15s...';
       let countdown = 15;
@@ -3194,7 +3194,7 @@ function downloadFile(content, filename, type) {
 // ============================================================
 // 15. TOAST NOTIFICATIONS
 // ============================================================
-function toast(msg, type = 'info') {
+function toast(msg, type = 'info', duration = 3500) {
   const container = document.getElementById('toast-container');
   const div = document.createElement('div');
   div.className = `toast toast-${type}`;
@@ -3205,7 +3205,7 @@ function toast(msg, type = 'info') {
   setTimeout(() => {
     div.classList.add('fadeout');
     setTimeout(() => { if (div.parentNode) div.parentNode.removeChild(div); }, 300);
-  }, 3500);
+  }, duration);
 }
 
 // ============================================================
