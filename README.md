@@ -30,6 +30,31 @@ Azure STT uses the same key as Azure TTS, but the Azure resource must have **Spe
 5. In the app: Settings → Azure TTS Key → paste the key, set region to match your resource (e.g. `centralindia`)
 6. Settings → Speech-to-Text → select **Azure Speech**
 
+## Azure TTS (Text-to-Speech)
+
+Currently using **en-GB-RyanNeural** (Oliver, male) and **en-GB-SoniaNeural** (Emma, female) — Azure's highest quality Neural British English voices.
+
+### Free Tier Limits
+
+- **500,000 characters/month** free
+- At current usage (~11 sessions/day, ~3,000 chars/session) = ~33,000 chars/day = well within limit
+- Resets on the 1st of every month
+
+### If Free Quota Runs Out Early
+
+When the free quota is exhausted, TTS will stop working and the app will fall back to the browser's built-in robotic voice.
+
+**Option 1 — Wait for monthly reset** (free, no action needed)
+
+**Option 2 — Enable pay-as-you-go on Azure**
+1. Go to [portal.azure.com](https://portal.azure.com)
+2. Upgrade your subscription to pay-as-you-go (add credit card)
+3. TTS will continue working automatically — no app changes needed
+4. Cost after free tier: **$16 per 1 million characters** (~₹1,336) — at normal usage roughly ₹50–100/month extra
+
+**Option 3 — Switch to OpenAI TTS** (higher cost, slightly better quality)
+- Settings → (future option if added) — costs ~₹125/hr
+
 ## Available LLM Options
 
 | Provider | Model | Cost |
