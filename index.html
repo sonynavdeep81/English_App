@@ -2762,8 +2762,8 @@ function buildDiffHtml(original, corrected) {
   return corrected.split(/\s+/).map(word => {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
-      return `<span style="color:#2d7a2d;font-size:12pt;font-weight:normal;">${escapeHtml(word)}</span>`;
-    return `<span style="color:#2d7a2d;font-size:14pt;font-weight:bold;">${escapeHtml(word)}</span>`;
+      return `<font color="#2d7a2d" size="3">${escapeHtml(word)}</font>`;
+    return `<b><font color="#2d7a2d" size="4">${escapeHtml(word)}</font></b>`;
   }).join(' ');
 }
 
@@ -2797,8 +2797,8 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const wrongHtml  = mistake ? `<span style="color:#c62828;font-size:12pt;font-weight:normal;">${escapeHtml(e.text)}</span>` : `<span style="font-size:12pt;font-weight:normal;">${escapeHtml(e.text)}</span>`;
-    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;font-size:12pt;font-weight:normal;">${escapeHtml(e.text)}</span>`;
+    const wrongHtml  = mistake ? `<font color="#c62828" size="3">${escapeHtml(e.text)}</font>` : `<font size="3">${escapeHtml(e.text)}</font>`;
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<font color="#2d7a2d" size="3">${escapeHtml(e.text)}</font>`;
     convRows += `<tr>
       ${td(sno++)}
       ${td(wrongHtml)}
@@ -2849,11 +2849,11 @@ async function copySentencesToSheets(date) {
   const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
   let rows = '';
   sents.forEach((s, i) => {
-    const vocab = (s.vocabulary || []).map(v => `<b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}`).join('&#10;');
+    const vocab = (s.vocabulary || []).map(v => `<font size="3"><b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}</font>`).join('&#10;');
     rows += `<tr>
       ${td(i+1)}
-      ${td(`<span style="font-size:12pt;">${escapeHtml(s.sentence)}</span>`)}
-      ${td(escapeHtml(s.situation || ''), 'color:#555;font-size:12pt;')}
+      ${td(`<font size="3">${escapeHtml(s.sentence)}</font>`)}
+      ${td(`<font size="3" color="#555555">${escapeHtml(s.situation || '')}</font>`)}
       ${td(vocab || '—', 'white-space:pre-wrap;')}
     </tr>`;
   });
