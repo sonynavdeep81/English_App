@@ -2871,13 +2871,13 @@ async function copyColoredTable(date, idx) {
   if (!conv) return;
   const mistakes = conv.review?.mistakes || [];
   if (!mistakes.length) { toast('No corrections to copy for this session.', 'warning'); return; }
-  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-family:Arial;">${s}</th>`;
-  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-family:Arial;font-size:11pt;${extra}">${s}</td>`;
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-family:Arial;font-size:12pt;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-family:Arial;font-size:12pt;${extra}">${s}</td>`;
   const rows = mistakes.map(m => `<tr>
     ${td(`<span style="color:#c62828;">${escapeHtml(m.what_user_said || '')}</span>`)}
     ${td(`<span style="color:#2d7a2d;font-weight:600;">${escapeHtml(m.correction || '')}</span>`)}
     ${td(m.is_collocation ? `<span style="background:#fff3e0;color:#e65100;padding:2px 6px;border-radius:4px;font-weight:600;">📌 ${escapeHtml(m.collocation_note || 'Fixed phrase')}</span>` : '—')}
-    ${td(escapeHtml(m.explanation || ''), 'color:var(--text-secondary);font-size:0.9em;')}
+    ${td(escapeHtml(m.explanation || ''))}
   </tr>`).join('');
   const html = `<meta charset='utf-8'><google-sheets-html-origin>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
