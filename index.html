@@ -2420,7 +2420,7 @@ Provide your analysis in this exact JSON format and nothing else (no markdown, n
     state.settings.convModel,
     systemPrompt,
     [{ role: 'user', content: 'Please provide the review now.' }],
-    2048
+    4096
   );
 
   return parseJSON(result.text);
