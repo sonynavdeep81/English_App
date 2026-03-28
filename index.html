@@ -2843,7 +2843,7 @@ async function copyColoredTable(date, idx) {
       ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
     </tr>`;
   }
-  const html = `<meta charset='utf-8'>
+  const html = `<meta charset='utf-8'><google-sheets-html-origin>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
       ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>`;
@@ -2862,7 +2862,7 @@ async function copySentencesToSheets(date) {
   const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
   let rows = '';
   sents.forEach((s, i) => {
-    const vocab = (s.vocabulary || []).map(v => `<b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}`).join('<br>');
+    const vocab = (s.vocabulary || []).map(v => `${escapeHtml(v.word)}: ${escapeHtml(v.meaning)}`).join('&#10;');
     rows += `<tr>
       ${td(i+1)}
       ${td(escapeHtml(s.sentence))}
