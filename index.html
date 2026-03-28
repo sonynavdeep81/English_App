@@ -2809,12 +2809,25 @@ async function copyColoredTable(date, idx) {
     </tr></thead><tbody>${sentRows}</tbody></table>` : ''}
   `;
 
-  try {
-    await navigator.clipboard.write([
-      new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) })
-    ]);
+  // Use contenteditable + execCommand so browser packages HTML in a format
+  // Google Sheets recognises (ClipboardItem strips rich text formatting)
+  const el = document.createElement('div');
+  el.contentEditable = 'true';
+  el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  el.focus();
+  const sel = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  const ok = document.execCommand('copy');
+  sel.removeAllRanges();
+  document.body.removeChild(el);
+  if (ok) {
     toast('✅ Copied! Now paste into Google Sheets with Ctrl+V', 'success', 5000);
-  } catch(e) {
+  } else {
     toast('Copy failed — use Chrome on desktop for this feature.', 'error');
   }
 }
