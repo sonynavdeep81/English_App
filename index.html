@@ -2692,7 +2692,7 @@ function showHistoryDay(date) {
               </div>
             ` : ''}
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" onclick="copyColoredTable('${date}', ${ci})">📋 Copy to Google Sheets</button>
+              <button class="btn btn-primary btn-sm" onclick="downloadConvXls('${date}', ${ci})">📥 Download for Google Sheets</button>
             </div>
           </div>
         </div>
@@ -2703,7 +2703,7 @@ function showHistoryDay(date) {
   if (sents.length > 0) {
     html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">
       <h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:0;">Today's Sentences</h3>
-      <button class="btn btn-primary btn-sm" onclick="copySentencesToSheets('${date}')">📋 Copy to Google Sheets</button>
+      <button class="btn btn-primary btn-sm" onclick="downloadSentencesXls('${date}')">📥 Download for Google Sheets</button>
     </div>`;
     html += sents.map((s, i) => `
       <div style="background:var(--warm-gray-1);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
@@ -2777,104 +2777,82 @@ function buildWhyHtml(mistake) {
   return lines.join('<br><br>');
 }
 
-async function copyColoredTable(date, idx) {
+// Downloads an HTML table as .xls — Google Sheets/Excel opens it
+// with ALL formatting (bold, color, font-size) perfectly preserved.
+function downloadXls(html, filename) {
+  const xlsHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel"
+    xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="utf-8"></head><body>${html}</body></html>`;
+  const blob = new Blob([xlsHtml], { type: 'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadConvXls(date, idx) {
   const conv  = state.data.conversations[date]?.[idx];
-  const sents = state.data.sentences[date] || [];
   if (!conv) return;
 
   const exchanges = conv.exchanges || [];
   const mistakes  = conv.review?.mistakes || [];
-  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
-  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-size:12pt;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-size:12pt;${extra}">${s}</td>`;
 
   let convRows = '';
   let sno = 1;
   for (let i = 0; i < exchanges.length; i++) {
     const e = exchanges[i];
     if (e.role !== 'user') continue;
-    const aiQ = i > 0 ? exchanges[i-1].text : '';
     const mistake = mistakes.find(m =>
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const wrongHtml  = mistake ? `<span style="color:#c62828;font-size:12pt;">${escapeHtml(e.text)}</span>` : `<span style="font-size:12pt;">${escapeHtml(e.text)}</span>`;
-    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;font-size:12pt;">${escapeHtml(e.text)}</span>`;
+    const wrongHtml  = mistake ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
     convRows += `<tr>
       ${td(sno++)}
       ${td(wrongHtml)}
       ${td(correctHtml)}
-      ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
+      ${td(buildWhyHtml(mistake))}
     </tr>`;
   }
 
-  let sentRows = '';
+  const html = `
+    <h3 style="font-family:Arial;font-size:13pt;">Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</h3>
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;"><thead><tr>
+      ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
+    </tr></thead><tbody>${convRows}</tbody></table>`;
+
+  downloadXls(html, `conversation-${date}-${idx+1}.xls`);
+  toast('✅ Downloaded! Open the .xls file in Google Sheets or upload to Google Drive.', 'success', 5000);
+}
+
+function downloadSentencesXls(date) {
+  const sents = state.data.sentences[date] || [];
+  if (!sents.length) { toast('No sentences for this date.', 'warning'); return; }
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-size:12pt;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-size:12pt;font-weight:normal;${extra}">${s}</td>`;
+  let rows = '';
   sents.forEach((s, i) => {
     const vocab = (s.vocabulary || []).map(v => `<b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}`).join('<br>');
-    sentRows += `<tr>
+    rows += `<tr>
       ${td(i+1)}
-      ${td(`<b>${escapeHtml(s.sentence)}</b>`)}
+      ${td(escapeHtml(s.sentence))}
       ${td(escapeHtml(s.situation || ''), 'color:#555;')}
       ${td(vocab || '—')}
     </tr>`;
   });
-
   const html = `
-    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;font-weight:normal;"><thead><tr>
-      ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
-    </tr></thead><tbody>${convRows}</tbody></table>
-  `;
-
-  if (copyRenderedHtml(html)) {
-    toast('✅ Copied! Now paste into Google Sheets with Ctrl+V', 'success', 5000);
-  } else {
-    toast('Copy failed — use Chrome on desktop for this feature.', 'error');
-  }
-}
-
-// Copies HTML by rendering it into a hidden DOM element and using
-// execCommand('copy'). This produces the same clipboard format as
-// manually selecting styled text on a webpage, so Google Sheets
-// preserves bold, font-size, and color on paste.
-function copyRenderedHtml(html) {
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
-  el.innerHTML = html;
-  document.body.appendChild(el);
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  const ok = document.execCommand('copy');
-  sel.removeAllRanges();
-  document.body.removeChild(el);
-  return ok;
-}
-
-function copySentencesToSheets(date) {
-  const sents = state.data.sentences[date] || [];
-  if (!sents.length) { toast('No sentences for this date.', 'warning'); return; }
-  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
-  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
-  let rows = '';
-  sents.forEach((s, i) => {
-    const vocab = (s.vocabulary || []).map(v => `<span style="font-size:12pt;"><b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}</span>`).join('<br>');
-    rows += `<tr>
-      ${td(i+1)}
-      ${td(`<span style="font-size:12pt;font-weight:normal;">${escapeHtml(s.sentence)}</span>`)}
-      ${td(`<span style="font-size:12pt;font-weight:normal;color:#555;">${escapeHtml(s.situation || '')}</span>`)}
-      ${td(vocab || '—')}
-    </tr>`;
-  });
-  const html = `
-    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;font-weight:normal;"><thead><tr>
+    <h3 style="font-family:Arial;font-size:13pt;">Today's Sentences — ${escapeHtml(date)}</h3>
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;"><thead><tr>
       ${th('#')}${th('Sentence')}${th('Situation')}${th('Vocabulary')}
     </tr></thead><tbody>${rows}</tbody></table>`;
-  if (copyRenderedHtml(html)) {
-    toast('✅ Copied! Paste into Google Sheets with Ctrl+V', 'success', 5000);
-  } else {
-    toast('Copy failed — use Chrome on desktop.', 'error');
-  }
+
+  downloadXls(html, `sentences-${date}.xls`);
+  toast('✅ Downloaded! Open the .xls file in Google Sheets or upload to Google Drive.', 'success', 5000);
 }
 
 function exportSentencesCSV(date) {
