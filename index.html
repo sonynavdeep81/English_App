@@ -2141,6 +2141,7 @@ function toggleUseSentences() {
 }
 
 async function startConversation() {
+  state.convEnded = false;
   if (!state.selectedTopic) {
     toast('Please select a topic first.', 'warning');
     return;
@@ -2278,6 +2279,9 @@ async function sendUserTurn(text) {
     const result = await callLLM(provider, state.settings.convModel, systemPrompt, messages, 256);
     hideTypingIndicator();
 
+    // Conversation was ended while waiting for LLM — discard response
+    if (state.convEnded) return;
+
     const parsed = safeParseConvResponse(result.text);
     const aiText = parsed.spoken_text || result.text;
     if (parsed.internal_notes) state.session.internalNotes.push(parsed.internal_notes);
@@ -2353,6 +2357,7 @@ function hideTypingIndicator() {
 }
 
 async function endConversation() {
+  state.convEnded = true;
   stopListening();
   stopSpeaking();
 
