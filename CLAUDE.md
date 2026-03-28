@@ -48,16 +48,21 @@ Deploys automatically on every push to `main` via GitHub Actions. No manual depl
 - **API key storage**: The setup screen must never overwrite an existing key with an empty field. Only update a key if the user actually typed a value (`if (key) state.keys.x = key`).
 - **TTS guard**: `speak()` checks `state.convEnded` at the top and returns early — this stops in-flight LLM responses from speaking after the user clicks Finish.
 - **Level options**: `initLevelOptions()` listens on the radio `change` event (not `click` on the label) to avoid the label→radio double-fire that causes duplicate toasts.
-- **Session review table**: `buildWhyHtml()` renders only `explanation` and `collocation` in the Why column. Changed words belong in the separate Changed Words column, not here.
+- **Session review table**: `buildWhyHtml()` renders only `explanation` and `collocation` in the Why column. The session review table (shown during/after a session) is one row per mistake — do not group by turn.
 - **`sentences_used` format**: The AI returns these as objects `{user_said, target, used_correctly}`, not plain strings. Always extract `.target` before calling string methods.
+- **History mistake matching**: Use `filter()` not `find()` — a single user turn can have multiple mistakes. Match using normalized text (strip punctuation) with both a prefix check (40 chars) and a substring check (20 chars) to handle AI splitting long sentences into fragments.
+
+## Google Sheets Export
+
+- All tables use `font-size:12pt` and `font-family:Arial`. Do not use relative sizes (`0.9em`) inside `td` styles as they override the base size.
+- `copyColoredTable` (conversation corrections): columns are **What You Said, Better Way, Collocation, Why** — one row per mistake, matching the session review table exactly.
+- `copySentencesToSheets` (daily sentences): columns are **Sentence, Situation, Word, Meaning** — no serial number column.
+- Both use `<google-sheets-html-origin>` meta tag. Do not switch to plain-text clipboard formats.
 
 ## Prompts
 
 The LLM review prompt targets **IELTS Band 8–9** output: full native British corrections (not minimal fixes), British idioms, rich vocabulary. See `english-coach-build-prompt.md` for the full spec.
 
-## Google Sheets Export
-
-Sentence tables are copied as HTML using `google-sheets-html-origin` meta tag so Sheets preserves colors and line breaks on paste. Do not switch to plain-text clipboard formats.
 
 ## GitHub Pages / API keys
 
