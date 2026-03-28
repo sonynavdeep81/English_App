@@ -923,15 +923,6 @@
 <body>
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
-<div id="confirm-overlay" class="confirm-overlay" style="display:none;">
-  <div class="confirm-box">
-    <p id="confirm-message"></p>
-    <div class="confirm-btns">
-      <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
-      <button class="btn btn-coral" id="confirm-ok">Continue</button>
-    </div>
-  </div>
-</div>
 <div id="app">
 
   <!-- ========== SETUP SCREEN ========== -->
@@ -3648,14 +3639,27 @@ function downloadFile(content, filename, type) {
 // 15. TOAST NOTIFICATIONS
 // ============================================================
 function showConfirm(message, onConfirm) {
-  const overlay = document.getElementById('confirm-overlay');
-  document.getElementById('confirm-message').textContent = message;
-  overlay.style.display = 'flex';
-  const ok     = document.getElementById('confirm-ok');
-  const cancel = document.getElementById('confirm-cancel');
-  const close  = () => { overlay.style.display = 'none'; ok.onclick = null; cancel.onclick = null; };
-  ok.onclick     = () => { close(); onConfirm(); };
-  cancel.onclick = () => close();
+  const overlay = document.createElement('div');
+  overlay.style.cssText = [
+    'position:fixed', 'top:0', 'left:0', 'width:100%', 'height:100%',
+    'background:rgba(0,0,0,0.75)', 'z-index:999999',
+    'display:flex', 'align-items:center', 'justify-content:center', 'padding:20px', 'box-sizing:border-box'
+  ].join(';');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+      <p style="font-size:0.95rem;color:#1a1815;margin-bottom:20px;line-height:1.5;">${message.replace(/</g,'&lt;')}</p>
+      <div style="display:flex;gap:10px;">
+        <button id="_confirm_cancel" style="flex:1;padding:12px;border-radius:10px;border:2px solid #e8e0d8;background:#fff;font-size:0.95rem;cursor:pointer;">Cancel</button>
+        <button id="_confirm_ok" style="flex:1;padding:12px;border-radius:10px;border:none;background:#e8635a;color:#fff;font-size:0.95rem;font-weight:600;cursor:pointer;">Continue</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const close = () => document.body.removeChild(overlay);
+  overlay.querySelector('#_confirm_ok').onclick     = () => { close(); onConfirm(); };
+  overlay.querySelector('#_confirm_cancel').onclick = () => close();
 }
 
 function toast(msg, type = 'info', duration = 3500) {
