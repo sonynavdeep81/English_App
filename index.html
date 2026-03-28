@@ -1112,7 +1112,6 @@
       </div>
       <div id="review-content" style="padding:0 0 16px;"></div>
       <div style="display:flex;gap:8px;padding-bottom:16px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="exportSessionCSV()">📥 Export CSV</button>
         <button class="btn btn-secondary" style="flex:1;" onclick="showScreen('dashboard')">Back to Home</button>
       </div>
     </div>
@@ -2696,8 +2695,7 @@ function showHistoryDay(date) {
               </div>
             ` : ''}
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" onclick="copyColoredTable('${date}', ${ci})">📋 Copy colored table → Sheets</button>
-              <button class="btn btn-secondary btn-sm" onclick="exportConvCSV('${date}', ${ci})">📥 Export CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="copyColoredTable('${date}', ${ci})">📋 Copy to Google Sheets</button>
             </div>
           </div>
         </div>
@@ -2706,7 +2704,10 @@ function showHistoryDay(date) {
   }
 
   if (sents.length > 0) {
-    html += '<h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:16px 0 8px;">Today\'s Sentences</h3>';
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">
+      <h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:0;">Today's Sentences</h3>
+      <button class="btn btn-secondary btn-sm" onclick="exportSentencesCSV('${date}')">📥 Export Sentences</button>
+    </div>`;
     html += sents.map((s, i) => `
       <div style="background:var(--warm-gray-1);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
         <div style="font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:4px;">${escapeHtml(s.sentence)}</div>
@@ -2765,8 +2766,18 @@ function buildDiffHtml(original, corrected) {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
       return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
-    return `<span style="color:#bf360c;font-weight:bold;background-color:#fff176;">${escapeHtml(word)}</span>`;
+    return `<b><span style="color:#2d7a2d;">${escapeHtml(word)}</span></b>`;
   }).join(' ');
+}
+
+function buildWhyHtml(mistake) {
+  if (!mistake) return '';
+  const lines = [];
+  const changes = buildChangesText(mistake.what_user_said || '', mistake.correction || '');
+  if (changes) lines.push(`• Changed: ${escapeHtml(changes)}`);
+  if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
+  if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
+  return lines.join('<br>');
 }
 
 async function copyColoredTable(date, idx) {
@@ -2796,7 +2807,7 @@ async function copyColoredTable(date, idx) {
       ${td(escapeHtml(aiQ))}
       ${td(wrongHtml)}
       ${td(correctHtml)}
-      ${td(escapeHtml(mistake?.explanation || ''), 'color:#555;font-size:0.9em;')}
+      ${td(buildWhyHtml(mistake), 'font-size:0.9em;')}
     </tr>`;
   }
 
@@ -2833,6 +2844,20 @@ async function copyColoredTable(date, idx) {
   } catch(e) {
     toast('Copy failed — use Chrome on desktop for this feature.', 'error');
   }
+}
+
+function exportSentencesCSV(date) {
+  const sents = state.data.sentences[date] || [];
+  if (!sents.length) { toast('No sentences for this date.', 'warning'); return; }
+  const rows = [['#','Sentence','Situation','Vocabulary','Practised','Used in Conversation']];
+  sents.forEach((s, i) => {
+    const vocab = (s.vocabulary || []).map(v => `${v.word}: ${v.meaning}`).join(' | ');
+    rows.push([i+1, s.sentence, s.situation||'', vocab, s.practised?'Yes':'No', s.used_in_conversation?'Yes':'No']);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = `sentences-${date}.csv`; a.click();
 }
 
 function exportConvCSV(date, idx) {
