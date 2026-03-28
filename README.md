@@ -19,6 +19,17 @@
 
 > To switch STT: Settings → Speech-to-Text → select engine
 
+### Setting up Azure STT (when needed)
+
+Azure STT uses the same key as Azure TTS, but the Azure resource must have **Speech Services** enabled (not just TTS).
+
+1. Go to [portal.azure.com](https://portal.azure.com)
+2. Create a resource → search **"Speech"** → select **Speech Services**
+3. Choose free tier (F0) — includes both STT and TTS
+4. Once created, go to the resource → **Keys and Endpoint** → copy Key 1
+5. In the app: Settings → Azure TTS Key → paste the key, set region to match your resource (e.g. `centralindia`)
+6. Settings → Speech-to-Text → select **Azure Speech**
+
 ## Available LLM Options
 
 | Provider | Model | Cost |
