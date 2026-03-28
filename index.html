@@ -1082,8 +1082,7 @@
       <div class="chat-controls">
         <div class="live-transcript" id="live-transcript">Listening...</div>
         <div class="mic-row">
-          <button class="btn btn-secondary btn-sm" id="btn-tap-to-speak" onclick="tapToSpeak()">🎤 Tap to speak</button>
-          <button class="mic-btn" id="mic-btn" onclick="toggleMic()" aria-label="Toggle microphone">🎤</button>
+          <button class="btn btn-secondary btn-sm" id="btn-tap-to-speak" onclick="tapToSpeak()" style="display:none;">🎤 Tap to speak</button>
           <button class="btn btn-secondary btn-sm" id="btn-send-transcript" onclick="sendCurrentTranscript()" style="display:none;">Send ↑</button>
         </div>
         <div class="mic-status" id="mic-status">Tap mic to speak</div>
@@ -1805,10 +1804,11 @@ function stopListening() {
 }
 
 function updateMicUI(active) {
-  const btn = document.getElementById('mic-btn');
+  const tapBtn = document.getElementById('btn-tap-to-speak');
   const statusEl = document.getElementById('mic-status');
-  if (btn) btn.classList.toggle('recording', active);
-  if (statusEl) statusEl.textContent = active ? '🔴 Listening...' : 'Tap mic to speak';
+  // Show "Tap to speak" only when not listening (fallback)
+  if (tapBtn) tapBtn.style.display = active ? 'none' : 'inline-flex';
+  if (statusEl) statusEl.textContent = active ? '🔴 Listening...' : '';
 }
 
 function updateLiveTranscript(text) {
@@ -2332,6 +2332,8 @@ function showTypingIndicator() {
   // Show status
   const statusEl = document.getElementById('mic-status');
   if (statusEl) statusEl.textContent = `${state.settings.voice === 'sonia' ? 'Emma' : 'Oliver'} is thinking...`;
+  const tapBtn = document.getElementById('btn-tap-to-speak');
+  if (tapBtn) tapBtn.style.display = 'none';
 }
 
 function hideTypingIndicator() {
@@ -2339,6 +2341,8 @@ function hideTypingIndicator() {
   if (el) el.remove();
   const statusEl = document.getElementById('mic-status');
   if (statusEl) statusEl.textContent = `${state.settings.voice === 'sonia' ? 'Emma' : 'Oliver'} is speaking...`;
+  const tapBtn2 = document.getElementById('btn-tap-to-speak');
+  if (tapBtn2) tapBtn2.style.display = 'none';
 }
 
 async function endConversation() {
