@@ -2751,8 +2751,8 @@ function buildDiffHtml(original, corrected) {
   return corrected.split(/\s+/).map(word => {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
-      return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
-    return `<span style="color:#e65100;font-weight:bold;">${escapeHtml(word)}</span>`;
+      return `<font color="#2d7a2d">${escapeHtml(word)}</font>`;
+    return `<b><font color="#e65100">${escapeHtml(word)}</font></b>`;
   }).join(' ');
 }
 
@@ -2776,7 +2776,7 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<font color="#2d7a2d">${escapeHtml(e.text)}</font>`;
     convRows += `<tr>
       ${td(sno++)}
       ${td(escapeHtml(aiQ))}
