@@ -1357,8 +1357,10 @@ const PRICING = {
   'claude-haiku-4-5-20251001': { input: 1.00, output: 5.00,  free: false },
   'claude-sonnet-4-6':         { input: 3.00, output: 15.00, free: false },
   'claude-opus-4-6':           { input: 5.00, output: 25.00, free: false },
-  'gpt-5-mini':                { input: 0.25, output: 2.00,  free: false },
-  'gpt-5.4':                   { input: 2.50, output: 15.00, free: false },
+  'gpt-4o-mini':               { input: 0.15, output: 0.60,  free: false },
+  'gpt-4.1-mini':              { input: 0.40, output: 1.60,  free: false },
+  'gpt-4o':                    { input: 2.50, output: 10.00, free: false },
+  'gpt-4.1':                   { input: 2.00, output: 8.00,  free: false },
 };
 
 const MODELS = {
@@ -1374,8 +1376,10 @@ const MODELS = {
     { id: 'claude-opus-4-6',           label: 'Claude Opus 4.6' },
   ],
   openai: [
-    { id: 'gpt-5-mini', label: 'GPT-5 Mini' },
-    { id: 'gpt-5.4',    label: 'GPT-5.4' },
+    { id: 'gpt-4o-mini',  label: 'GPT-4o Mini ⭐ (Best value)' },
+    { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini (Newest, cheap)' },
+    { id: 'gpt-4o',       label: 'GPT-4o (High quality)' },
+    { id: 'gpt-4.1',      label: 'GPT-4.1 (Best quality)' },
   ],
 };
 
@@ -3317,9 +3321,9 @@ document.getElementById('btn-save-setup').addEventListener('click', () => {
     state.settings.convModel        = 'claude-sonnet-4-6';
   } else if (openaiKey) {
     state.settings.sentenceProvider = 'openai';
-    state.settings.sentenceModel    = 'gpt-5-mini';
+    state.settings.sentenceModel    = 'gpt-4o-mini';
     state.settings.convProvider     = 'openai';
-    state.settings.convModel        = 'gpt-5-mini';
+    state.settings.convModel        = 'gpt-4o-mini';
   }
   saveSettings();
 
