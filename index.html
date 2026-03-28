@@ -2419,6 +2419,11 @@ async function generateReview() {
 
 IMPORTANT: Only analyse and correct the [LEARNER] turns. The [COACH - Oliver/Emma] turns are spoken by a native British speaker — do NOT review or praise those. All feedback, corrections, and "well done" points must refer exclusively to what the [LEARNER] said.
 
+Do NOT flag these as mistakes:
+- Capitalisation differences only (e.g. "University" vs "university") — ignore entirely
+- Minor punctuation differences
+- Only flag real grammar, vocabulary, collocation, or phrasing errors that affect meaning or naturalness
+
 Learner level: ${LEVEL_DESCRIPTIONS[state.settings.level]}
 
 Full conversation transcript (review ONLY the [LEARNER] lines):
