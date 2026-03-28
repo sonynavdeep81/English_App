@@ -2763,7 +2763,7 @@ function buildDiffHtml(original, corrected) {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
       return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
-    return `<b style="color:#2d7a2d;">${escapeHtml(word)}</b>`;
+    return `<span style="color:#2d7a2d;font-size:14pt;">${escapeHtml(word)}</span>`;
   }).join(' ');
 }
 
