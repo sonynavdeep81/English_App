@@ -1755,7 +1755,7 @@ function stopSpeaking() {
 }
 
 // ============================================================
-// 6. STT (Web Speech API)
+// 6. STT
 // ============================================================
 let recognition     = null;
 let silenceTimer    = null;
@@ -1765,7 +1765,18 @@ let sttOnResult     = null;
 let sttOnSilence    = null;
 let micAutoRestart  = true;
 
+// Batch STT (Whisper / Azure)
+let mediaRecorder    = null;
+let audioChunks      = [];
+let batchAudioCtx    = null;
+let batchSilenceRaf  = null;
+
 function startListening(onResult, onSilence) {
+  const provider = state.settings.sttProvider || 'webspeech';
+  if (provider === 'whisper' || provider === 'azure') {
+    startBatchSTT(onResult, onSilence);
+    return;
+  }
   if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
     toast('Speech recognition not supported. Please use Chrome or Edge.', 'error');
     return;
@@ -1841,8 +1852,151 @@ function stopListening() {
     try { recognition.stop(); } catch(e) {}
     recognition = null;
   }
+  if (batchSilenceRaf) { cancelAnimationFrame(batchSilenceRaf); batchSilenceRaf = null; }
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    try { mediaRecorder.stop(); } catch(e) {}
+  }
+  mediaRecorder = null;
+  audioChunks = [];
+  if (batchAudioCtx) { batchAudioCtx.close(); batchAudioCtx = null; }
   updateMicUI(false);
   updateLiveTranscript('');
+}
+
+async function startBatchSTT(onResult, onSilence) {
+  stopListening();
+  const provider = state.settings.sttProvider;
+  if (provider === 'whisper' && !state.keys.openai) {
+    toast('Whisper requires an OpenAI API key. Please add it in Settings.', 'error');
+    return;
+  }
+  if (provider === 'azure' && !state.keys.azureTts) {
+    toast('Azure STT requires an Azure key. Please add it in Settings.', 'error');
+    return;
+  }
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    toast('Microphone permission denied.', 'error');
+    return;
+  }
+
+  // Silence detection via Web Audio API
+  batchAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const source   = batchAudioCtx.createMediaStreamSource(stream);
+  const analyser = batchAudioCtx.createAnalyser();
+  analyser.fftSize = 512;
+  source.connect(analyser);
+  const dataArr = new Uint8Array(analyser.frequencyBinCount);
+
+  audioChunks = [];
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus' : 'audio/webm';
+  mediaRecorder = new MediaRecorder(stream, { mimeType });
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+  mediaRecorder.start(100);
+
+  isListening = true;
+  updateMicUI(true);
+  updateLiveTranscript('🎙️ Recording...');
+
+  let hadSpeech    = false;
+  let silenceStart = null;
+  const SPEECH_THRESHOLD = 10;
+  const SILENCE_MS       = 1500;
+  const MAX_MS           = 30000;
+  const startedAt        = Date.now();
+
+  function checkSilence() {
+    if (!isListening || !mediaRecorder) return;
+    analyser.getByteFrequencyData(dataArr);
+    const rms = dataArr.reduce((s, v) => s + v, 0) / dataArr.length;
+
+    if (rms > SPEECH_THRESHOLD) {
+      hadSpeech    = true;
+      silenceStart = null;
+    } else if (hadSpeech && !silenceStart) {
+      silenceStart = Date.now();
+    }
+
+    const elapsed = Date.now() - startedAt;
+    const silenced = silenceStart && (Date.now() - silenceStart) > SILENCE_MS;
+
+    if ((hadSpeech && silenced) || elapsed > MAX_MS) {
+      finishBatchSTT(stream, onSilence);
+      return;
+    }
+    batchSilenceRaf = requestAnimationFrame(checkSilence);
+  }
+  batchSilenceRaf = requestAnimationFrame(checkSilence);
+}
+
+async function finishBatchSTT(stream, onSilence) {
+  if (batchSilenceRaf) { cancelAnimationFrame(batchSilenceRaf); batchSilenceRaf = null; }
+  stream.getTracks().forEach(t => t.stop());
+  updateLiveTranscript('⏳ Processing...');
+
+  const chunks = [...audioChunks];
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    await new Promise(resolve => {
+      mediaRecorder.onstop = resolve;
+      mediaRecorder.stop();
+    });
+  }
+  mediaRecorder = null;
+  audioChunks = [];
+  if (batchAudioCtx) { batchAudioCtx.close(); batchAudioCtx = null; }
+  isListening = false;
+  updateMicUI(false);
+
+  const blob = new Blob(chunks, { type: 'audio/webm' });
+  try {
+    const provider = state.settings.sttProvider;
+    let text = '';
+    if (provider === 'whisper') text = await transcribeWhisper(blob);
+    else if (provider === 'azure') text = await transcribeAzure(blob);
+    updateLiveTranscript('');
+    if (text.trim()) onSilence(text.trim());
+    else toast('No speech detected. Please try again.', 'warning');
+  } catch(e) {
+    updateLiveTranscript('');
+    toast('Transcription failed: ' + e.message, 'error');
+  }
+}
+
+async function transcribeWhisper(blob) {
+  const formData = new FormData();
+  formData.append('file', blob, 'audio.webm');
+  formData.append('model', 'whisper-1');
+  formData.append('language', 'en');
+  const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${state.keys.openai}` },
+    body: formData
+  });
+  if (!resp.ok) throw new Error(`Whisper error ${resp.status}`);
+  const data = await resp.json();
+  return data.text || '';
+}
+
+async function transcribeAzure(blob) {
+  const region = state.keys.azureRegion || 'centralindia';
+  const resp = await fetch(
+    `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-GB&format=simple`,
+    {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': state.keys.azureTts,
+        'Content-Type': 'audio/webm;codecs=opus',
+      },
+      body: blob
+    }
+  );
+  if (!resp.ok) throw new Error(`Azure STT error ${resp.status}`);
+  const data = await resp.json();
+  return data.DisplayText || '';
 }
 
 function updateMicUI(active) {
