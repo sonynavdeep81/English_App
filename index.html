@@ -1513,7 +1513,17 @@ async function callGemini(model, systemPrompt, messages, maxTokens) {
   );
 
   if (resp.status === 401 || resp.status === 403) throw { type: 'invalid_key', provider: 'gemini' };
-  if (resp.status === 429) throw { type: 'rate_limit', provider: 'gemini' };
+  if (resp.status === 429) {
+    let retryAfter = parseInt(resp.headers.get('Retry-After')) || 0;
+    if (!retryAfter) {
+      try {
+        const errBody = await resp.json();
+        const detail = errBody.error?.details?.find(d => d.retryDelay);
+        if (detail?.retryDelay) retryAfter = parseInt(detail.retryDelay) || 60;
+      } catch(e) {}
+    }
+    throw { type: 'rate_limit', provider: 'gemini', retryAfter: retryAfter || 60 };
+  }
   if (!resp.ok) {
     const errData = await resp.json().catch(() => ({}));
     throw new Error(errData.error?.message || `Gemini API error ${resp.status}`);
@@ -2253,33 +2263,32 @@ function safeParseConvResponse(text) {
 async function sendUserTurn(text) {
   if (!text || !state.session) return;
   if (isListening) stopListening();
-
   currentTranscript = '';
   updateLiveTranscript('');
 
   const aiName = state.settings.voice === 'sonia' ? 'Emma' : 'Oliver';
 
+  // Add user message to chat ONCE — never repeated on retry
   addChatMessage('user', text, 'You');
   state.session.exchanges.push({ role: 'user', text });
 
-  showTypingIndicator();
-
-  // Build last 10 exchanges for context
-  const exchanges = state.session.exchanges;
-  const lastExchanges = exchanges.slice(-10);
+  // Build LLM context ONCE and pass to retriable function
+  const lastExchanges = state.session.exchanges.slice(-10);
   const messages = lastExchanges.map(e => ({
-    role:    e.role === 'ai' ? 'assistant' : 'user',
+    role: e.role === 'ai' ? 'assistant' : 'user',
     content: e.text
   }));
-
   const systemPrompt = buildConversationSystemPrompt(aiName);
   const provider = state.settings.convProvider;
 
+  await _callConvLLM(messages, systemPrompt, provider, aiName);
+}
+
+async function _callConvLLM(messages, systemPrompt, provider, aiName) {
+  showTypingIndicator();
   try {
     const result = await callLLM(provider, state.settings.convModel, systemPrompt, messages, 256);
     hideTypingIndicator();
-
-    // Conversation was ended while waiting for LLM — discard response
     if (state.convEnded) return;
 
     const parsed = safeParseConvResponse(result.text);
@@ -2288,41 +2297,36 @@ async function sendUserTurn(text) {
 
     addChatMessage('ai', aiText, aiName);
     state.session.exchanges.push({ role: 'ai', text: aiText });
-
     updateCostDisplay();
 
     speak(aiText, () => {
       if (state.screen === 'conversation' && state.session) {
         micAutoRestart = true;
-        startListening(
-          () => {},
-          (finalText) => { sendUserTurn(finalText); }
-        );
+        startListening(() => {}, (finalText) => { sendUserTurn(finalText); });
       }
     });
   } catch(err) {
     hideTypingIndicator();
     if (err && err.type === 'rate_limit' && !state.convEnded) {
-      // Auto-retry after 15s for rate limit
-      toast('⏳ Rate limited — retrying in 15 seconds...', 'warning', 16000);
+      const waitSec = err.retryAfter || 60;
+      toast(`⏳ Rate limited — retrying in ${waitSec}s...`, 'warning', (waitSec + 2) * 1000);
       const statusEl = document.getElementById('mic-status');
-      if (statusEl) statusEl.textContent = 'Rate limited — retrying in 15s...';
-      let countdown = 15;
+      let countdown = waitSec;
+      if (statusEl) statusEl.textContent = `Rate limited — retrying in ${countdown}s...`;
       const iv = setInterval(() => {
         countdown--;
         if (statusEl) statusEl.textContent = `Rate limited — retrying in ${countdown}s...`;
-        if (countdown <= 0) { clearInterval(iv); }
+        if (countdown <= 0) clearInterval(iv);
       }, 1000);
       setTimeout(() => {
         if (!state.convEnded && state.session) {
           if (statusEl) statusEl.textContent = 'Retrying...';
-          sendUserTurn(text);
+          _callConvLLM(messages, systemPrompt, provider, aiName);
         }
-      }, 15000);
+      }, waitSec * 1000);
       return;
     }
     handleLLMError(err, 'conversation');
-    // Restart listening even on error
     setTimeout(() => {
       if (state.screen === 'conversation' && state.session) {
         micAutoRestart = true;
