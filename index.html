@@ -2763,7 +2763,7 @@ function buildDiffHtml(original, corrected) {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
       return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
-    return `<span style="color:#2d7a2d;font-weight:bold;">${escapeHtml(word)}</span>`;
+    return `<b style="color:#2d7a2d;">${escapeHtml(word)}</b>`;
   }).join(' ');
 }
 
@@ -2774,7 +2774,7 @@ function buildWhyHtml(mistake) {
   if (changes) lines.push(`• Changed: ${escapeHtml(changes)}`);
   if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
   if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
-  return lines.join('<br>&nbsp;<br>');
+  return lines.join('&#10;&#10;');
 }
 
 async function copyColoredTable(date, idx) {
@@ -2804,7 +2804,7 @@ async function copyColoredTable(date, idx) {
       ${td(escapeHtml(aiQ))}
       ${td(wrongHtml)}
       ${td(correctHtml)}
-      ${td(buildWhyHtml(mistake), 'font-size:0.9em;')}
+      ${td(buildWhyHtml(mistake), 'font-size:0.9em;white-space:pre-wrap;')}
     </tr>`;
   }
 
