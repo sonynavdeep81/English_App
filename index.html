@@ -683,7 +683,7 @@
     .mistakes-table tr:last-child td { border-bottom: none; }
     .mistake-original { color: #c62828; }
     .mistake-correction { color: #2d7a2d; font-weight: 500; }
-    .diff-added { color: #1a535c; font-weight: 700; background: #e0f4f4; border-radius: 3px; padding: 0 2px; }
+    .diff-added { color: #2d7a2d; font-weight: 700; }
     .collocation-badge { display: inline-block; background: #fff3e0; color: #e65100; font-size: 0.75rem; font-weight: 600; border-radius: 4px; padding: 2px 6px; }
     .sent-pair-card { background: var(--warm-white); border: 1px solid var(--warm-gray-2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; }
     .sent-pair-ok { border-left: 3px solid #2d7a2d; }
@@ -1121,9 +1121,6 @@
   <div id="screen-history" class="screen">
     <div class="app-header">
       <h1>History</h1>
-      <div class="header-actions">
-        <button class="btn btn-outline btn-sm" onclick="exportAllCSV()">Export All</button>
-      </div>
     </div>
     <div class="history-content">
       <div class="history-header">
@@ -2777,7 +2774,7 @@ function buildWhyHtml(mistake) {
   if (changes) lines.push(`• Changed: ${escapeHtml(changes)}`);
   if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
   if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
-  return lines.join('<br>');
+  return lines.join('<br><br>');
 }
 
 async function copyColoredTable(date, idx) {
@@ -2875,14 +2872,6 @@ function exportSessionCSV() {
   exportConversationToCSV([convs[convs.length - 1]], `english-coach-session-${d}.csv`);
 }
 
-function exportAllCSV() {
-  const allConvs = [];
-  for (const [date, convs] of Object.entries(state.data.conversations)) {
-    allConvs.push(...convs);
-  }
-  if (allConvs.length === 0) { toast('No conversations to export.', 'warning'); return; }
-  exportConversationToCSV(allConvs, `english-coach-all-history.csv`);
-}
 
 function exportConversationToCSV(conversations, filename) {
   const rows = [['S.No.', 'Date', 'Topic', 'AI Question', 'User Answer', 'Mistake', 'Correction', 'Explanation']];
