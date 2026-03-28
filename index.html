@@ -2762,7 +2762,7 @@ function buildDiffHtml(original, corrected) {
   return corrected.split(/\s+/).map(word => {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
-      return `<span style="color:#2d7a2d;font-size:12pt;">${escapeHtml(word)}</span>`;
+      return `<span style="color:#2d7a2d;font-size:12pt;font-weight:normal;">${escapeHtml(word)}</span>`;
     return `<span style="color:#2d7a2d;font-size:14pt;font-weight:bold;">${escapeHtml(word)}</span>`;
   }).join(' ');
 }
@@ -2797,14 +2797,13 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const wrongHtml  = mistake ? `<span style="color:#c62828;font-size:12pt;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
-    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
+    const wrongHtml  = mistake ? `<span style="color:#c62828;font-size:12pt;font-weight:normal;">${escapeHtml(e.text)}</span>` : `<span style="font-size:12pt;font-weight:normal;">${escapeHtml(e.text)}</span>`;
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;font-size:12pt;font-weight:normal;">${escapeHtml(e.text)}</span>`;
     convRows += `<tr>
       ${td(sno++)}
-      ${td(escapeHtml(aiQ))}
       ${td(wrongHtml)}
       ${td(correctHtml)}
-      ${td(buildWhyHtml(mistake), 'font-size:0.9em;white-space:pre-wrap;')}
+      ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
     </tr>`;
   }
 
@@ -2823,8 +2822,8 @@ async function copyColoredTable(date, idx) {
   // so it preserves inline span color/background-color styles on paste.
   const html = `<meta charset='utf-8'><google-sheets-html-origin>
     <p style="font-family:Arial;font-size:13px;font-weight:bold;">Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</p>
-    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;"><thead><tr>
-      ${th('#')}${th("Oliver's Question")}${th("What You Said")}${th("Better Way")}${th("Why")}
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;font-weight:normal;"><thead><tr>
+      ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>
     ${sentRows ? `
     <br><p style="font-family:Arial;font-size:13px;font-weight:bold;">Today's Sentences</p>
