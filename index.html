@@ -2420,9 +2420,27 @@ function buildConversationSystemPrompt(aiName) {
   const todaySents = state.data.sentences[d] || [];
 
   let sentenceSection = '';
-  if (state.useTodaySentences && todaySents.length > 0) {
-    const sentList = todaySents.map(s => `- "${s.sentence}"`).join('\n');
-    sentenceSection = `\n\nToday's sentences to weave into conversation naturally. Steer the conversation so the user gets opportunities to use these:\n${sentList}\nTry to create situations where these phrases would naturally come up. If the user uses one correctly, respond naturally and move on. If they miss an opportunity, gently create another opening.`;
+  if (state.useTodaySentences) {
+    const todayList = todaySents.map(s => `- "${s.sentence}"`);
+
+    // Collect spaced repetition sentences due today (1, 3, 7 days ago)
+    const todayDate = new Date(d);
+    const reviewList = [];
+    for (const days of SPACED_REPETITION_DAYS) {
+      const pastDate = new Date(todayDate);
+      pastDate.setDate(pastDate.getDate() - days);
+      const pastStr = pastDate.toISOString().slice(0, 10);
+      const pastSents = state.data.sentences[pastStr] || [];
+      pastSents.forEach(s => reviewList.push(`- "${s.sentence}" (from ${days} day${days > 1 ? 's' : ''} ago)`));
+    }
+
+    const allSents = [...todayList, ...reviewList];
+    if (allSents.length > 0) {
+      const label = reviewList.length > 0
+        ? "Today's sentences and revision sentences due for review"
+        : "Today's sentences";
+      sentenceSection = `\n\n${label} to weave into conversation naturally. Steer the conversation so the user gets opportunities to use these:\n${allSents.join('\n')}\nTry to create situations where these phrases would naturally come up. If the user uses one correctly, respond naturally and move on. If they miss an opportunity, gently create another opening.`;
+    }
   }
 
   return `You are a warm, natural British English conversation partner. Your name is ${aiName}. You speak in natural, fluent British English — not formal, not robotic. Think of yourself as a friendly colleague having a chat over tea.
