@@ -2874,17 +2874,19 @@ async function copySentencesToSheets(date) {
   const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
   let rows = '';
   sents.forEach((s, i) => {
-    const vocab = (s.vocabulary || []).map(v => `${escapeHtml(v.word)}: ${escapeHtml(v.meaning)}`).join('&#10;');
+    const words    = (s.vocabulary || []).map(v => escapeHtml(v.word)).join('&#10;');
+    const meanings = (s.vocabulary || []).map(v => escapeHtml(v.meaning)).join('&#10;');
     rows += `<tr>
       ${td(i+1)}
       ${td(escapeHtml(s.sentence))}
       ${td(escapeHtml(s.situation || ''), 'color:#555;')}
-      ${td(vocab || '—')}
+      ${td(words || '—', 'color:#1a73e8;white-space:pre-wrap;')}
+      ${td(meanings || '—', 'color:#2d7a2d;white-space:pre-wrap;')}
     </tr>`;
   });
   const html = `<meta charset='utf-8'><google-sheets-html-origin>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
-      ${th('#')}${th('Sentence')}${th('Situation')}${th('Vocabulary')}
+      ${th('#')}${th('Sentence')}${th('Situation')}${th('Word')}${th('Meaning')}
     </tr></thead><tbody>${rows}</tbody></table>`;
   try {
     await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'})})]);
