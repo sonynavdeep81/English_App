@@ -1592,7 +1592,11 @@ async function callOpenAI(model, systemPrompt, messages, maxTokens) {
   }
 
   const data = await resp.json();
-  const text = data.choices?.[0]?.message?.content || '';
+  const rawContent = data.choices?.[0]?.message?.content;
+  // Newer models return content as array of {type,text} blocks
+  const text = Array.isArray(rawContent)
+    ? rawContent.filter(c => c.type === 'text').map(c => c.text).join('')
+    : (rawContent || '');
   const inputTokens  = data.usage?.prompt_tokens     || 0;
   const outputTokens = data.usage?.completion_tokens || 0;
 
