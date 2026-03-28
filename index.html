@@ -1581,7 +1581,7 @@ async function callOpenAI(model, systemPrompt, messages, maxTokens) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${key}`
     },
-    body: JSON.stringify({ model, max_completion_tokens: maxTokens, messages: openaiMessages, temperature: 0.8 })
+    body: JSON.stringify({ model, max_completion_tokens: maxTokens, messages: openaiMessages })
   });
 
   if (resp.status === 401 || resp.status === 403) throw { type: 'invalid_key', provider: 'openai' };
