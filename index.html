@@ -1,0 +1,3274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#1a535c">
+  <title>British English Coach</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    /* ===== CSS RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal: #1a535c;
+      --teal-light: #2a7a8a;
+      --teal-pale: #e8f4f6;
+      --coral: #ff6b6b;
+      --coral-light: #ff8e8e;
+      --warm-white: #faf9f7;
+      --warm-gray-1: #f5f3ef;
+      --warm-gray-2: #e8e4dc;
+      --warm-gray-3: #c8c2b6;
+      --warm-gray-4: #8a8278;
+      --text-primary: #1a1815;
+      --text-secondary: #5a5650;
+      --text-muted: #8a8278;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 16px;
+      --nav-height: 64px;
+      --header-height: 56px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --teal: #2a8a9a;
+        --teal-light: #3aabb d;
+        --teal-pale: #0d2f35;
+        --warm-white: #1a1815;
+        --warm-gray-1: #242018;
+        --warm-gray-2: #2e2a22;
+        --warm-gray-3: #4a443a;
+        --warm-gray-4: #7a7268;
+        --text-primary: #f0ece4;
+        --text-secondary: #b8b0a4;
+        --text-muted: #7a7268;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+        --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+      }
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background: var(--warm-white);
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3 { font-family: 'DM Serif Display', serif; line-height: 1.2; }
+
+    /* ===== APP CONTAINER ===== */
+    #app {
+      max-width: 640px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+      background: var(--warm-white);
+    }
+
+    /* ===== SCREENS ===== */
+    .screen {
+      display: none;
+      min-height: 100vh;
+      padding-bottom: calc(var(--nav-height) + 16px);
+      animation: fadeIn 0.25s ease;
+    }
+    .screen.active { display: block; }
+    #screen-setup { padding-bottom: 24px; }
+    #screen-conversation { padding-bottom: 0; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--warm-white);
+      border-bottom: 1px solid var(--warm-gray-2);
+      padding: 0 16px;
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .app-header h1 { font-size: 1.1rem; color: var(--teal); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .icon-btn:hover { background: var(--warm-gray-1); color: var(--teal); }
+
+    /* ===== BOTTOM NAV ===== */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 640px;
+      height: var(--nav-height);
+      background: var(--warm-white);
+      border-top: 1px solid var(--warm-gray-2);
+      display: flex;
+      z-index: 200;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+    }
+    #bottom-nav.hidden { display: none; }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: color 0.15s;
+      padding: 8px 0;
+    }
+    .nav-item .nav-icon { font-size: 1.3rem; }
+    .nav-item.active { color: var(--teal); }
+    .nav-item.active .nav-icon { transform: scale(1.1); }
+
+    /* ===== SETUP SCREEN ===== */
+    .setup-hero {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-light) 100%);
+      padding: 48px 24px 32px;
+      text-align: center;
+      color: white;
+    }
+    .setup-hero .hero-icon { font-size: 3rem; margin-bottom: 12px; }
+    .setup-hero h1 { font-size: 2rem; color: white; margin-bottom: 8px; }
+    .setup-hero p { opacity: 0.85; font-size: 0.95rem; }
+
+    .setup-body { padding: 24px 16px; }
+
+    .provider-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      background: var(--warm-gray-1);
+      padding: 4px;
+      border-radius: var(--radius);
+    }
+    .provider-tab {
+      flex: 1;
+      padding: 8px 4px;
+      border: none;
+      background: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .provider-tab.active {
+      background: var(--warm-white);
+      color: var(--teal);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .provider-panel { display: none; }
+    .provider-panel.active { display: block; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--warm-gray-2);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      background: var(--warm-white);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    .form-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(26,83,92,0.1); }
+    .form-hint {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .form-hint a { color: var(--teal); text-decoration: none; }
+    .form-hint a:hover { text-decoration: underline; }
+
+    .divider { border: none; border-top: 1px solid var(--warm-gray-2); margin: 20px 0; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--teal); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--teal-light); box-shadow: var(--shadow-md); }
+    .btn-secondary { background: var(--warm-gray-1); color: var(--text-primary); border: 1.5px solid var(--warm-gray-2); }
+    .btn-secondary:hover:not(:disabled) { background: var(--warm-gray-2); }
+    .btn-coral { background: var(--coral); color: white; }
+    .btn-coral:hover:not(:disabled) { background: var(--coral-light); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; color: var(--teal); border: 1.5px solid var(--teal); }
+    .btn-outline:hover:not(:disabled) { background: var(--teal-pale); }
+    .btn-full { width: 100%; }
+    .btn-sm { padding: 8px 14px; font-size: 0.85rem; border-radius: 8px; }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard-content { padding: 0 16px 16px; }
+
+    .backup-banner {
+      background: #fff8e1;
+      border: 1px solid #f9c74f;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #7a5c00;
+    }
+    .backup-banner:hover { background: #fff3c0; }
+    @media (prefers-color-scheme: dark) {
+      .backup-banner { background: #2a2200; border-color: #7a5c00; color: #f9c74f; }
+    }
+
+    .date-display {
+      padding: 20px 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .date-display .date-text h2 { font-size: 1.5rem; color: var(--text-primary); }
+    .date-display .date-text p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--teal-pale);
+      color: var(--teal);
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--warm-gray-1);
+      border-radius: var(--radius);
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid var(--warm-gray-2);
+    }
+    .stat-card .stat-val { font-size: 1.4rem; font-weight: 700; color: var(--teal); font-family: 'DM Serif Display', serif; }
+    .stat-card .stat-lbl { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .section-card {
+      background: var(--warm-white);
+      border: 1px solid var(--warm-gray-2);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .section-card h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text-primary); }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .action-btn {
+      background: var(--warm-gray-1);
+      border: 1.5px solid var(--warm-gray-2);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .action-btn:hover { border-color: var(--teal); background: var(--teal-pale); }
+    .action-btn .ab-icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .action-btn .ab-label { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+    .action-btn .ab-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .action-btn.highlight { background: var(--teal); border-color: var(--teal); }
+    .action-btn.highlight .ab-label, .action-btn.highlight .ab-sub { color: white; }
+
+    /* Rating Chart */
+    .chart-wrap { overflow: hidden; border-radius: 8px; background: var(--warm-gray-1); padding: 8px 4px 4px; }
+    .chart-wrap svg { display: block; width: 100%; }
+
+    /* ===== SENTENCES SCREEN ===== */
+    .sentences-content { padding: 0 16px; }
+    .sentences-header { padding: 16px 0 12px; display: flex; align-items: center; justify-content: space-between; }
+    .sentences-header h2 { font-size: 1.3rem; }
+
+    .sentence-card {
+      background: var(--warm-white);
+      border: 1px solid var(--warm-gray-2);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.15s;
+    }
+    .sentence-card:hover { box-shadow: var(--shadow-md); }
+    .sentence-card .sentence-num {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .sentence-card .sentence-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.15rem;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .sentence-card .sentence-situation {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+    .sentence-card-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .vocab-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--teal);
+      font-family: 'DM Sans', sans-serif;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .vocab-panel {
+      display: none;
+      margin-top: 12px;
+      background: var(--warm-gray-1);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .vocab-panel.open { display: block; }
+    .vocab-item { margin-bottom: 6px; font-size: 0.82rem; }
+    .vocab-item:last-child { margin-bottom: 0; }
+    .vocab-word { font-weight: 600; color: var(--teal); }
+    .vocab-meaning { color: var(--text-secondary); }
+
+    .practise-area {
+      margin-top: 12px;
+      display: none;
+      background: var(--warm-gray-1);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .practise-area.open { display: block; }
+    .diff-result { font-size: 0.9rem; line-height: 1.8; margin: 8px 0; }
+    .diff-correct { color: #2d7a2d; background: #e8f5e9; padding: 1px 3px; border-radius: 3px; }
+    .diff-wrong { color: #c62828; background: #ffebee; padding: 1px 3px; border-radius: 3px; text-decoration: line-through; }
+    .diff-missing { color: #e65100; background: #fff3e0; padding: 1px 3px; border-radius: 3px; font-style: italic; }
+
+    .review-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      cursor: pointer;
+      border-top: 1px solid var(--warm-gray-2);
+      margin-top: 8px;
+    }
+    .review-section-header h3 { font-size: 0.95rem; color: var(--text-secondary); }
+    .review-section-content { display: none; }
+    .review-section-content.open { display: block; }
+
+    /* ===== CONVERSATION SCREEN ===== */
+    #screen-conversation {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      padding-bottom: 0;
+    }
+    #screen-conversation.active { display: flex; }
+
+    .conv-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--warm-white);
+      border-bottom: 1px solid var(--warm-gray-2);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .conv-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+    .conv-subtitle { font-size: 0.75rem; color: var(--text-muted); }
+    .conv-cost { font-size: 0.75rem; color: var(--text-muted); text-align: right; }
+
+    /* Topic Selection */
+    #topic-selection { padding: 20px 16px; flex: 1; overflow-y: auto; }
+    #topic-selection h2 { font-size: 1.3rem; margin-bottom: 6px; }
+    #topic-selection p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; }
+    .topic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .topic-btn {
+      background: var(--warm-gray-1);
+      border: 1.5px solid var(--warm-gray-2);
+      border-radius: var(--radius);
+      padding: 14px 12px;
+      cursor: pointer;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: all 0.15s;
+      line-height: 1.3;
+    }
+    .topic-btn:hover { border-color: var(--teal); background: var(--teal-pale); color: var(--teal); }
+    .topic-btn.selected { border-color: var(--teal); background: var(--teal); color: white; }
+
+    .use-sentences-toggle {
+      background: var(--warm-gray-1);
+      border: 1.5px solid var(--warm-gray-2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'DM Sans', sans-serif;
+      margin-bottom: 16px;
+      transition: all 0.15s;
+    }
+    .use-sentences-toggle.selected { border-color: var(--coral); background: #fff0f0; }
+    @media (prefers-color-scheme: dark) {
+      .use-sentences-toggle.selected { background: #2a0a0a; }
+    }
+    .toggle-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--warm-gray-3);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .use-sentences-toggle.selected .toggle-checkbox {
+      background: var(--coral);
+      border-color: var(--coral);
+      color: white;
+    }
+    .toggle-text { font-size: 0.85rem; }
+    .toggle-text strong { display: block; font-weight: 600; }
+    .toggle-text span { font-size: 0.78rem; color: var(--text-muted); }
+
+    /* Chat UI */
+    #chat-ui { display: none; flex-direction: column; flex: 1; min-height: 0; }
+    #chat-ui.active { display: flex; }
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+      animation: msgSlide 0.2s ease;
+    }
+    @keyframes msgSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .chat-msg.ai { align-self: flex-start; }
+    .chat-msg.user { align-self: flex-end; }
+    .chat-msg .msg-name { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 600; }
+    .chat-msg.user .msg-name { text-align: right; }
+    .msg-bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+    .chat-msg.ai .msg-bubble {
+      background: var(--warm-gray-1);
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.user .msg-bubble {
+      background: var(--teal);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 4px;
+      padding: 10px 14px;
+      background: var(--warm-gray-1);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: dotBounce 1.4s infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    .chat-controls {
+      padding: 10px 16px 16px;
+      background: var(--warm-white);
+      border-top: 1px solid var(--warm-gray-2);
+    }
+    .mic-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .mic-status {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      min-height: 20px;
+    }
+    .mic-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: var(--teal);
+      color: white;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-md);
+      transition: all 0.15s;
+      position: relative;
+    }
+    .mic-btn:hover { transform: scale(1.05); }
+    .mic-btn.recording { background: var(--coral); }
+    .mic-btn.recording::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--coral);
+      animation: micPulse 1.5s infinite;
+      z-index: -1;
+    }
+    @keyframes micPulse {
+      0% { transform: scale(1); opacity: 0.7; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .live-transcript {
+      background: var(--warm-gray-1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      min-height: 36px;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    /* ===== SESSION REVIEW ===== */
+    #session-review { display: none; padding: 0 16px 24px; overflow-y: auto; flex: 1; }
+    #session-review.active { display: block; }
+
+    .score-ring-wrap { text-align: center; padding: 20px 0 16px; }
+    .score-ring-wrap h2 { margin-bottom: 16px; font-size: 1.2rem; }
+    .score-ring { position: relative; display: inline-block; }
+    .score-ring svg { display: block; }
+    .score-ring .score-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: var(--teal);
+      font-weight: 700;
+    }
+
+    .review-section { margin-bottom: 20px; }
+    .review-section h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .review-feedback { background: var(--warm-gray-1); border-radius: var(--radius); padding: 14px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+
+    .well-done-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .well-done-list li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.88rem; color: var(--text-secondary); background: #f0faf0; border-radius: 8px; padding: 8px 10px; }
+    .well-done-list li::before { content: '✓'; color: #2d7a2d; font-weight: 700; flex-shrink: 0; }
+    @media (prefers-color-scheme: dark) { .well-done-list li { background: #0d2010; } }
+
+    .mistakes-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .mistakes-table th { background: var(--warm-gray-1); color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.04em; padding: 8px 10px; text-align: left; }
+    .mistakes-table td { padding: 10px; border-bottom: 1px solid var(--warm-gray-2); vertical-align: top; }
+    .mistakes-table tr:last-child td { border-bottom: none; }
+    .mistake-original { color: #c62828; }
+    .mistake-correction { color: #2d7a2d; font-weight: 500; }
+
+    .tip-box { background: linear-gradient(135deg, var(--teal-pale), #f0f9fa); border: 1px solid var(--teal); border-radius: var(--radius); padding: 14px 16px; }
+    .tip-box p { font-size: 0.9rem; color: var(--text-secondary); }
+    @media (prefers-color-scheme: dark) { .tip-box { background: linear-gradient(135deg, var(--teal-pale), #0a1f22); } }
+
+    /* ===== HISTORY SCREEN ===== */
+    .history-content { padding: 0 16px; }
+    .history-header { padding: 16px 0 12px; display: flex; align-items: center; justify-content: space-between; }
+    .history-header h2 { font-size: 1.3rem; }
+
+    .history-date-item {
+      background: var(--warm-white);
+      border: 1px solid var(--warm-gray-2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s;
+      box-shadow: var(--shadow-sm);
+    }
+    .history-date-item:hover { border-color: var(--teal); box-shadow: var(--shadow-md); }
+    .history-date-item .hd-date { font-weight: 600; font-size: 0.95rem; }
+    .history-date-item .hd-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+    .history-date-item .hd-arrow { color: var(--text-muted); }
+
+    .history-day-detail { display: none; }
+    .history-day-detail.active { display: block; }
+    .back-btn { display: flex; align-items: center; gap: 6px; color: var(--teal); cursor: pointer; font-size: 0.9rem; font-weight: 600; padding: 12px 0; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+
+    .conv-summary-card {
+      background: var(--warm-white);
+      border: 1px solid var(--warm-gray-2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s;
+    }
+    .conv-summary-card:hover { border-color: var(--teal); box-shadow: var(--shadow-md); }
+    .conv-summary-card .cs-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .conv-summary-card .cs-topic { font-weight: 600; font-size: 0.9rem; }
+    .conv-summary-card .cs-rating { font-size: 0.85rem; color: var(--teal); font-weight: 700; }
+    .conv-summary-card .cs-meta { font-size: 0.78rem; color: var(--text-muted); }
+
+    .transcript-item { padding: 8px 0; border-bottom: 1px solid var(--warm-gray-2); font-size: 0.85rem; }
+    .transcript-item:last-child { border-bottom: none; }
+    .transcript-item .ti-role { font-weight: 600; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+    .transcript-item.user-turn .ti-role { color: var(--teal); }
+
+    /* ===== SETTINGS SCREEN ===== */
+    .settings-content { padding: 0 16px 24px; }
+    .settings-header { padding: 16px 0 12px; }
+    .settings-header h2 { font-size: 1.3rem; }
+
+    .settings-section { margin-bottom: 20px; }
+    .settings-section h3 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--warm-gray-2); }
+
+    .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+    .setting-row .setting-label { font-size: 0.9rem; font-weight: 500; }
+    .setting-row .setting-sub { font-size: 0.78rem; color: var(--text-muted); }
+
+    .form-select {
+      padding: 8px 10px;
+      border: 1.5px solid var(--warm-gray-2);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      background: var(--warm-white);
+      outline: none;
+      cursor: pointer;
+      max-width: 200px;
+    }
+    .form-select:focus { border-color: var(--teal); }
+
+    .level-options { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .level-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1.5px solid var(--warm-gray-2);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 0.88rem;
+    }
+    .level-option.selected { border-color: var(--teal); background: var(--teal-pale); }
+    .level-option input[type="radio"] { display: none; }
+
+    .count-buttons { display: flex; gap: 6px; }
+    .count-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1.5px solid var(--warm-gray-2);
+      background: var(--warm-white);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .count-btn.active { background: var(--teal); border-color: var(--teal); color: white; }
+
+    .speed-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .speed-row input[type="range"] { flex: 1; accent-color: var(--teal); }
+    .speed-val { font-size: 0.85rem; font-weight: 600; color: var(--teal); min-width: 32px; }
+
+    .storage-bar-wrap { margin-top: 8px; }
+    .storage-bar {
+      height: 6px;
+      background: var(--warm-gray-2);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 6px 0;
+    }
+    .storage-bar-fill { height: 100%; background: var(--teal); border-radius: 3px; transition: width 0.3s; }
+    .storage-bar-fill.warn { background: var(--coral); }
+    .storage-text { font-size: 0.8rem; color: var(--text-muted); }
+
+    .pricing-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .pricing-table th { background: var(--warm-gray-1); color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.04em; padding: 6px 8px; text-align: left; }
+    .pricing-table td { padding: 7px 8px; border-bottom: 1px solid var(--warm-gray-2); }
+    .pricing-table tr:last-child td { border-bottom: none; }
+    .free-badge { background: #e8f5e9; color: #2d7a2d; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+    @media (prefers-color-scheme: dark) { .free-badge { background: #0d2010; color: #7acf7a; } }
+
+    /* ===== TOAST ===== */
+    #toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; width: calc(100% - 32px); max-width: 560px; }
+    .toast {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      animation: toastIn 0.25s ease;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .toast.fadeout { animation: toastOut 0.3s ease forwards; }
+    @keyframes toastOut { to { opacity: 0; transform: translateY(-8px); } }
+    .toast-info { background: #1a1815; color: white; }
+    .toast-success { background: #2d7a2d; color: white; }
+    .toast-error { background: #c62828; color: white; }
+    .toast-warning { background: #e65100; color: white; }
+
+    /* ===== LOADING STATE ===== */
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .es-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ===== MISC ===== */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .tag-review { background: #fff3e0; color: #e65100; }
+    @media (prefers-color-scheme: dark) { .tag-review { background: #2a1200; color: #ff9b4a; } }
+    .tag-new { background: #e3f2fd; color: #1565c0; }
+    @media (prefers-color-scheme: dark) { .tag-new { background: #0a1a2a; color: #64b5f6; } }
+
+    .sentences-used-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chip { background: var(--warm-gray-1); border: 1px solid var(--warm-gray-2); border-radius: 20px; padding: 4px 10px; font-size: 0.78rem; color: var(--text-secondary); }
+    .chip.used { background: #e8f5e9; border-color: #a5d6a7; color: #2d7a2d; }
+    .chip.missed { background: #ffebee; border-color: #ef9a9a; color: #c62828; }
+    @media (prefers-color-scheme: dark) {
+      .chip.used { background: #0d2010; border-color: #2d6a2d; }
+      .chip.missed { background: #2a0808; border-color: #6a2020; }
+    }
+
+    .collapse-toggle { background: none; border: none; cursor: pointer; color: var(--teal); font-size: 0.85rem; font-family: 'DM Sans', sans-serif; font-weight: 600; display: flex; align-items: center; gap: 4px; padding: 0; }
+    .overflow-table { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--warm-gray-2); }
+
+    /* Responsive tweaks */
+    @media (max-width: 400px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .topic-grid { grid-template-columns: 1fr; }
+      .action-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- ========== SETUP SCREEN ========== -->
+  <div id="screen-setup" class="screen active">
+    <div class="setup-hero">
+      <div class="hero-icon">🇬🇧</div>
+      <h1>British English Coach</h1>
+      <p>Your personal AI-powered British English conversation partner</p>
+    </div>
+    <div class="setup-body">
+      <h2 style="font-size:1.2rem; margin-bottom:6px;">Get Started</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">Enter your API key(s) to begin. You can use different providers for different features.</p>
+
+      <div class="provider-tabs" role="tablist">
+        <button class="provider-tab active" data-tab="gemini" role="tab">🟢 Google</button>
+        <button class="provider-tab" data-tab="anthropic" role="tab">🟣 Anthropic</button>
+        <button class="provider-tab" data-tab="openai" role="tab">⚫ OpenAI</button>
+      </div>
+
+      <div id="tab-gemini" class="provider-panel active">
+        <div class="form-group">
+          <label class="form-label" for="key-gemini">Gemini API Key</label>
+          <input type="password" id="key-gemini" class="form-input" placeholder="AIza...">
+          <p class="form-hint">Get yours free at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> — no credit card needed. Free tier covers ~1hr/day of practice.</p>
+        </div>
+      </div>
+      <div id="tab-anthropic" class="provider-panel">
+        <div class="form-group">
+          <label class="form-label" for="key-anthropic">Anthropic API Key</label>
+          <input type="password" id="key-anthropic" class="form-input" placeholder="sk-ant-...">
+          <p class="form-hint">Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> — pay-as-you-go, ~₹290–875/month</p>
+        </div>
+      </div>
+      <div id="tab-openai" class="provider-panel">
+        <div class="form-group">
+          <label class="form-label" for="key-openai">OpenAI API Key</label>
+          <input type="password" id="key-openai" class="form-input" placeholder="sk-...">
+          <p class="form-hint">Get yours at <a href="https://platform.openai.com" target="_blank">platform.openai.com</a> — pay-as-you-go</p>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="form-group">
+        <label class="form-label" for="key-azure">Azure TTS Key <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+        <input type="password" id="key-azure" class="form-input" placeholder="Enter Azure Cognitive Services key...">
+        <p class="form-hint">Free tier at <a href="https://azure.microsoft.com" target="_blank">azure.microsoft.com</a> for natural British voice. Leave blank to use browser voice.</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="azure-region">Azure Region</label>
+        <input type="text" id="azure-region" class="form-input" placeholder="centralindia" value="centralindia">
+      </div>
+
+      <button class="btn btn-primary btn-full" id="btn-save-setup" style="margin-top:8px;">
+        Save & Continue →
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== DASHBOARD SCREEN ========== -->
+  <div id="screen-dashboard" class="screen">
+    <div class="app-header">
+      <h1>🇬🇧 English Coach</h1>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-backup-header" title="Backup data" aria-label="Backup data">💾</button>
+      </div>
+    </div>
+    <div class="dashboard-content">
+      <div id="backup-banner" class="backup-banner" style="display:none;" onclick="backupData()">
+        <span>⚠️</span>
+        <span>It's been a week since your last backup. Tap here to save your progress.</span>
+      </div>
+      <div class="date-display">
+        <div class="date-text">
+          <h2 id="dashboard-date">Saturday, 28 March 2026</h2>
+          <p id="dashboard-day-msg">Good morning! Ready to practise?</p>
+        </div>
+        <div id="model-badge" class="model-badge">🟢 Gemini Flash</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-streak">0</div>
+          <div class="stat-lbl">🔥 Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-sentences">0</div>
+          <div class="stat-lbl">📚 Sentences</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-convos">0</div>
+          <div class="stat-lbl">💬 Convos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-avg">–</div>
+          <div class="stat-lbl">⭐ Avg</div>
+        </div>
+      </div>
+      <div class="action-grid">
+        <button class="action-btn highlight" onclick="showScreen('conversation')">
+          <div class="ab-icon">🎙️</div>
+          <div class="ab-label">Start Conversation</div>
+          <div class="ab-sub">Voice practice with AI</div>
+        </button>
+        <button class="action-btn" onclick="showScreen('sentences')">
+          <div class="ab-icon">📖</div>
+          <div class="ab-label">Daily Sentences</div>
+          <div class="ab-sub" id="sentences-btn-sub">Learn & practise</div>
+        </button>
+      </div>
+      <div class="section-card">
+        <h3>Rating Progress <span style="font-family:'DM Sans';font-size:0.75rem;color:var(--text-muted);font-weight:400;">last 14 sessions</span></h3>
+        <div class="chart-wrap">
+          <svg id="rating-chart" viewBox="0 0 280 80" xmlns="http://www.w3.org/2000/svg" aria-label="Rating chart">
+            <text x="140" y="48" text-anchor="middle" fill="var(--text-muted)" font-size="12" font-family="DM Sans">No sessions yet</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SENTENCES SCREEN ========== -->
+  <div id="screen-sentences" class="screen">
+    <div class="app-header">
+      <h1>Daily Sentences</h1>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-regen-sentences" title="Regenerate sentences" aria-label="Regenerate sentences">🔄</button>
+      </div>
+    </div>
+    <div class="sentences-content">
+      <div class="sentences-header">
+        <div>
+          <h2 id="sentences-date-label">Today's Sentences</h2>
+          <p style="font-size:0.8rem;color:var(--text-muted);" id="sentences-level-label">Adult level · 5 sentences</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-gen-sentences">Generate</button>
+      </div>
+      <div id="sentences-list"></div>
+      <div id="spaced-rep-section">
+        <div class="review-section-header" onclick="toggleSpacedRep()">
+          <h3 id="spaced-rep-title">📅 Review Previous Sentences</h3>
+          <span id="spaced-rep-arrow">▼</span>
+        </div>
+        <div id="spaced-rep-content" class="review-section-content">
+          <div id="spaced-rep-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CONVERSATION SCREEN ========== -->
+  <div id="screen-conversation" class="screen">
+    <div class="conv-header">
+      <div>
+        <div class="conv-title" id="conv-header-title">New Conversation</div>
+        <div class="conv-subtitle" id="conv-header-sub">Choose a topic to begin</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="conv-cost" id="conv-cost-display"></div>
+        <button class="btn btn-coral btn-sm" id="btn-end-conv" style="display:none;" onclick="endConversation()">Finish ✓</button>
+        <button class="icon-btn" onclick="showScreen('dashboard')" aria-label="Close">✕</button>
+      </div>
+    </div>
+
+    <!-- Topic Selection -->
+    <div id="topic-selection">
+      <h2>Choose a Topic</h2>
+      <p>What would you like to chat with <span id="ai-name-label">Oliver</span> about today?</p>
+      <div class="topic-grid" id="topic-grid"></div>
+      <div class="use-sentences-toggle" id="use-sentences-toggle" onclick="toggleUseSentences()">
+        <div class="toggle-checkbox" id="use-sentences-checkbox">✓</div>
+        <div class="toggle-text">
+          <strong>Weave in today's sentences</strong>
+          <span>Oliver will naturally bring today's sentences into the conversation</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="btn-start-conv" onclick="startConversation()">Start Conversation →</button>
+    </div>
+
+    <!-- Chat UI -->
+    <div id="chat-ui">
+      <div id="chat-messages"></div>
+      <div class="chat-controls">
+        <div class="live-transcript" id="live-transcript">Listening...</div>
+        <div class="mic-row">
+          <button class="btn btn-secondary btn-sm" id="btn-tap-to-speak" onclick="tapToSpeak()">🎤 Tap to speak</button>
+          <button class="mic-btn" id="mic-btn" onclick="toggleMic()" aria-label="Toggle microphone">🎤</button>
+          <button class="btn btn-secondary btn-sm" id="btn-send-transcript" onclick="sendCurrentTranscript()" style="display:none;">Send ↑</button>
+        </div>
+        <div class="mic-status" id="mic-status">Tap mic to speak</div>
+      </div>
+    </div>
+
+    <!-- Session Review -->
+    <div id="session-review">
+      <div class="score-ring-wrap">
+        <h2>Session Review</h2>
+        <div class="score-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--warm-gray-2)" stroke-width="8"/>
+            <circle id="score-ring-circle" cx="60" cy="60" r="50" fill="none" stroke="var(--teal)" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"
+              transform="rotate(-90 60 60)" style="transition:stroke-dashoffset 1s ease;"/>
+          </svg>
+          <div class="score-label" id="score-label">–</div>
+        </div>
+      </div>
+      <div id="review-content" style="padding:0 0 16px;"></div>
+      <div style="display:flex;gap:8px;padding-bottom:16px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="exportSessionCSV()">📥 Export CSV</button>
+        <button class="btn btn-secondary" style="flex:1;" onclick="showScreen('dashboard')">Back to Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== HISTORY SCREEN ========== -->
+  <div id="screen-history" class="screen">
+    <div class="app-header">
+      <h1>History</h1>
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportAllCSV()">Export All</button>
+      </div>
+    </div>
+    <div class="history-content">
+      <div class="history-header">
+        <h2>Conversation Log</h2>
+      </div>
+      <div id="history-list-view">
+        <div id="history-dates-list"></div>
+      </div>
+      <div id="history-day-view" class="history-day-detail">
+        <button class="back-btn" onclick="showHistoryList()">← Back to History</button>
+        <div id="history-day-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SETTINGS SCREEN ========== -->
+  <div id="screen-settings" class="screen">
+    <div class="app-header">
+      <h1>Settings</h1>
+    </div>
+    <div class="settings-content">
+      <div class="settings-header">
+        <h2>Preferences</h2>
+      </div>
+
+      <!-- API Keys -->
+      <div class="settings-section">
+        <h3>API Keys</h3>
+        <div class="form-group">
+          <label class="form-label">Gemini API Key</label>
+          <input type="password" id="settings-key-gemini" class="form-input" placeholder="AIza...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Anthropic API Key</label>
+          <input type="password" id="settings-key-anthropic" class="form-input" placeholder="sk-ant-...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">OpenAI API Key</label>
+          <input type="password" id="settings-key-openai" class="form-input" placeholder="sk-...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Azure TTS Key <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+          <input type="password" id="settings-key-azure" class="form-input" placeholder="Azure Cognitive Services key">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Azure Region</label>
+          <input type="text" id="settings-azure-region" class="form-input" placeholder="centralindia">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSettingsKeys()">Save Keys</button>
+      </div>
+
+      <!-- Provider & Model -->
+      <div class="settings-section">
+        <h3>AI Model</h3>
+        <div class="form-group">
+          <label class="form-label">Provider for Sentences</label>
+          <select id="settings-sentence-provider" class="form-select" onchange="updateModelDropdown('sentence')" style="max-width:100%;">
+            <option value="gemini">Google Gemini</option>
+            <option value="anthropic">Anthropic Claude</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Model for Sentences</label>
+          <select id="settings-sentence-model" class="form-select" style="max-width:100%;"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Provider for Conversation</label>
+          <select id="settings-conv-provider" class="form-select" onchange="updateModelDropdown('conv')" style="max-width:100%;">
+            <option value="gemini">Google Gemini</option>
+            <option value="anthropic">Anthropic Claude</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Model for Conversation</label>
+          <select id="settings-conv-model" class="form-select" style="max-width:100%;"></select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSettingsModels()">Save Model Settings</button>
+      </div>
+
+      <!-- Learner Level -->
+      <div class="settings-section">
+        <h3>Learner Level</h3>
+        <div class="level-options" id="level-options">
+          <label class="level-option" data-level="young">
+            <input type="radio" name="level" value="young">
+            <span style="font-size:1.2rem;">🌱</span>
+            <div>
+              <strong>Young Learner (8–12 yrs)</strong>
+              <div style="font-size:0.78rem;color:var(--text-muted);">Simple, fun, age-appropriate language</div>
+            </div>
+          </label>
+          <label class="level-option" data-level="teen">
+            <input type="radio" name="level" value="teen">
+            <span style="font-size:1.2rem;">🌿</span>
+            <div>
+              <strong>Teenager (13–17 yrs)</strong>
+              <div style="font-size:0.78rem;color:var(--text-muted);">Casual, relatable, some British slang</div>
+            </div>
+          </label>
+          <label class="level-option" data-level="adult">
+            <input type="radio" name="level" value="adult">
+            <span style="font-size:1.2rem;">🌳</span>
+            <div>
+              <strong>Adult (18+ yrs)</strong>
+              <div style="font-size:0.78rem;color:var(--text-muted);">Sophisticated, idiomatic British English</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Sentence Count -->
+      <div class="settings-section">
+        <h3>Daily Sentence Count</h3>
+        <div class="count-buttons" id="count-buttons">
+          <button class="count-btn" data-count="1" onclick="setCount(1)">1</button>
+          <button class="count-btn" data-count="3" onclick="setCount(3)">3</button>
+          <button class="count-btn active" data-count="5" onclick="setCount(5)">5</button>
+          <button class="count-btn" data-count="7" onclick="setCount(7)">7</button>
+          <button class="count-btn" data-count="10" onclick="setCount(10)">10</button>
+        </div>
+      </div>
+
+      <!-- Voice & Speed -->
+      <div class="settings-section">
+        <h3>Voice & Speed</h3>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Voice</div>
+            <div class="setting-sub">Ryan (male) or Sonia (female)</div>
+          </div>
+          <select id="settings-voice" class="form-select" onchange="saveVoiceSetting()">
+            <option value="ryan">Ryan (Oliver) 🎙️</option>
+            <option value="sonia">Sonia (Emma) 🎙️</option>
+          </select>
+        </div>
+        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+          <div class="setting-label">Speaking Speed</div>
+          <div class="speed-row">
+            <span style="font-size:0.75rem;color:var(--text-muted);">0.8×</span>
+            <input type="range" id="settings-speed" min="0.8" max="1.2" step="0.1" value="1.0" oninput="updateSpeedDisplay(this.value)">
+            <span style="font-size:0.75rem;color:var(--text-muted);">1.2×</span>
+            <span class="speed-val" id="speed-val">1.0×</span>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveVoiceSettings()">Save Voice Settings</button>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div class="settings-section">
+        <h3>Backup & Restore</h3>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="backupData()">💾 Backup Data</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('restore-file').click()">📂 Restore from Backup</button>
+          <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="restoreData(this)">
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);">Backup saves all your sentences, conversations, and settings as a JSON file.</p>
+      </div>
+
+      <!-- Storage -->
+      <div class="settings-section">
+        <h3>Storage</h3>
+        <div class="storage-bar-wrap">
+          <div class="storage-text" id="storage-text">Calculating...</div>
+          <div class="storage-bar">
+            <div class="storage-bar-fill" id="storage-bar-fill" style="width:0%"></div>
+          </div>
+          <div class="storage-text" id="storage-warn" style="color:var(--coral);display:none;">⚠️ Storage is getting full. Consider backing up and clearing old data.</div>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-secondary btn-sm" onclick="clearOldData()">🗑️ Clear data older than 30 days</button>
+        </div>
+      </div>
+
+      <!-- Pricing Reference -->
+      <div class="settings-section">
+        <h3>Pricing Reference</h3>
+        <div class="overflow-table">
+          <table class="pricing-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>In/MTok</th>
+                <th>Out/MTok</th>
+                <th>Tier</th>
+              </tr>
+            </thead>
+            <tbody id="pricing-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== BOTTOM NAV ========== -->
+  <nav id="bottom-nav" class="hidden" role="navigation" aria-label="Main navigation">
+    <button class="nav-item active" data-screen="dashboard" onclick="showScreen('dashboard')" aria-label="Home">
+      <span class="nav-icon">🏠</span>
+      <span>Home</span>
+    </button>
+    <button class="nav-item" data-screen="sentences" onclick="showScreen('sentences')" aria-label="Sentences">
+      <span class="nav-icon">📖</span>
+      <span>Sentences</span>
+    </button>
+    <button class="nav-item" data-screen="conversation" onclick="showScreen('conversation')" aria-label="Chat">
+      <span class="nav-icon">🎙️</span>
+      <span>Chat</span>
+    </button>
+    <button class="nav-item" data-screen="history" onclick="showScreen('history')" aria-label="History">
+      <span class="nav-icon">📅</span>
+      <span>History</span>
+    </button>
+    <button class="nav-item" data-screen="settings" onclick="showScreen('settings')" aria-label="Settings">
+      <span class="nav-icon">⚙️</span>
+      <span>Settings</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ============================================================
+// 1. CONSTANTS
+// ============================================================
+const PRICING = {
+  'gemini-2.5-flash':          { input: 0.30, output: 2.50,  free: true  },
+  'gemini-2.5-flash-lite':     { input: 0.10, output: 0.40,  free: true  },
+  'gemini-3-flash':            { input: 0.50, output: 3.00,  free: true  },
+  'gemini-2.5-pro':            { input: 1.25, output: 10.00, free: false },
+  'claude-haiku-4-5-20251001': { input: 1.00, output: 5.00,  free: false },
+  'claude-sonnet-4-6':         { input: 3.00, output: 15.00, free: false },
+  'claude-opus-4-6':           { input: 5.00, output: 25.00, free: false },
+  'gpt-5-mini':                { input: 0.25, output: 2.00,  free: false },
+  'gpt-5.4':                   { input: 2.50, output: 15.00, free: false },
+};
+
+const MODELS = {
+  gemini: [
+    { id: 'gemini-2.5-flash',      label: 'Gemini 2.5 Flash ⭐ (Free tier)' },
+    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite (Ultra-cheap)' },
+    { id: 'gemini-3-flash',        label: 'Gemini 3 Flash' },
+    { id: 'gemini-2.5-pro',        label: 'Gemini 2.5 Pro' },
+  ],
+  anthropic: [
+    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+    { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 ⭐' },
+    { id: 'claude-opus-4-6',           label: 'Claude Opus 4.6' },
+  ],
+  openai: [
+    { id: 'gpt-5-mini', label: 'GPT-5 Mini' },
+    { id: 'gpt-5.4',    label: 'GPT-5.4' },
+  ],
+};
+
+const TOPICS = [
+  'Daily life & routines', 'Travel & directions', 'Work & career',
+  'Food & dining', 'Shopping & money', 'Health & wellness',
+  'Technology & gadgets', 'Education & learning', 'Weather & seasons',
+  'Social situations', 'Opinions & debates', 'Storytelling',
+  'Free conversation'
+];
+
+const LEVEL_DESCRIPTIONS = {
+  young: 'Young Learner (8–12 yrs) — simple, fun, age-appropriate language',
+  teen:  'Teenager (13–17 yrs) — casual, relatable, some British slang',
+  adult: 'Adult (18+ yrs) — sophisticated, idiomatic British English',
+};
+
+const SPACED_REPETITION_DAYS = [1, 3, 7];
+const INR_RATE = 83.5;
+
+// ============================================================
+// 2. STATE
+// ============================================================
+let state = {
+  screen: 'setup',
+  settings: {
+    sentenceProvider: 'gemini',
+    sentenceModel:    'gemini-2.5-flash',
+    convProvider:     'gemini',
+    convModel:        'gemini-2.5-flash',
+    level:            'adult',
+    sentenceCount:    5,
+    voice:            'ryan',
+    speed:            1.0,
+  },
+  keys: {
+    gemini: '', anthropic: '', openai: '',
+    azureTts: '', azureRegion: 'centralindia'
+  },
+  session: null,
+  sessionCost: 0,
+  sessionStartTime: null,
+  selectedTopic: null,
+  useTodaySentences: true,
+  currentReview: null,
+  data: {
+    sentences:     {},
+    conversations: {},
+    stats:         { lastBackup: null }
+  },
+};
+
+// ============================================================
+// 3. STORAGE HELPERS
+// ============================================================
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadAll() {
+  try {
+    const keys = JSON.parse(localStorage.getItem('ec_keys') || '{}');
+    state.keys = Object.assign(state.keys, keys);
+    const settings = JSON.parse(localStorage.getItem('ec_settings') || '{}');
+    state.settings = Object.assign(state.settings, settings);
+    const data = JSON.parse(localStorage.getItem('ec_data') || '{}');
+    state.data.sentences     = data.sentences     || {};
+    state.data.conversations = data.conversations || {};
+    state.data.stats         = data.stats         || { lastBackup: null };
+  } catch(e) {
+    console.warn('Load error:', e);
+  }
+}
+
+function saveKeys() {
+  try { localStorage.setItem('ec_keys', JSON.stringify(state.keys)); }
+  catch(e) { handleStorageFull(); }
+}
+
+function saveSettings() {
+  try { localStorage.setItem('ec_settings', JSON.stringify(state.settings)); }
+  catch(e) { handleStorageFull(); }
+}
+
+function saveData() {
+  try { localStorage.setItem('ec_data', JSON.stringify(state.data)); }
+  catch(e) { handleStorageFull(); }
+}
+
+function handleStorageFull() {
+  toast('Storage is full! Please backup and clear old data in Settings.', 'error');
+}
+
+function getStorageUsage() {
+  let total = 0;
+  for (const key in localStorage) {
+    if (!localStorage.hasOwnProperty(key)) continue;
+    total += (localStorage[key].length + key.length) * 2;
+  }
+  return total;
+}
+
+// ============================================================
+// 4. LLM ABSTRACTION
+// ============================================================
+async function callLLM(provider, model, systemPrompt, messages, maxTokens = 512) {
+  switch (provider) {
+    case 'gemini':    return callGemini(model, systemPrompt, messages, maxTokens);
+    case 'anthropic': return callAnthropic(model, systemPrompt, messages, maxTokens);
+    case 'openai':    return callOpenAI(model, systemPrompt, messages, maxTokens);
+    default: throw new Error('Unknown provider: ' + provider);
+  }
+}
+
+async function callGemini(model, systemPrompt, messages, maxTokens) {
+  const key = state.keys.gemini;
+  if (!key) throw { type: 'no_key', provider: 'gemini' };
+
+  const geminiMessages = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: geminiMessages,
+        generationConfig: { maxOutputTokens: maxTokens, temperature: 0.8 }
+      })
+    }
+  );
+
+  if (resp.status === 401 || resp.status === 403) throw { type: 'invalid_key', provider: 'gemini' };
+  if (resp.status === 429) throw { type: 'rate_limit', provider: 'gemini' };
+  if (!resp.ok) {
+    const errData = await resp.json().catch(() => ({}));
+    throw new Error(errData.error?.message || `Gemini API error ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const inputTokens  = data.usageMetadata?.promptTokenCount || 0;
+  const outputTokens = data.usageMetadata?.candidatesTokenCount || 0;
+
+  trackCost(model, inputTokens, outputTokens);
+  return { text, inputTokens, outputTokens };
+}
+
+async function callAnthropic(model, systemPrompt, messages, maxTokens) {
+  const key = state.keys.anthropic;
+  if (!key) throw { type: 'no_key', provider: 'anthropic' };
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model, max_tokens: maxTokens, system: systemPrompt, messages })
+  });
+
+  if (resp.status === 401 || resp.status === 403) throw { type: 'invalid_key', provider: 'anthropic' };
+  if (resp.status === 429) throw { type: 'rate_limit', provider: 'anthropic' };
+  if (!resp.ok) {
+    const errData = await resp.json().catch(() => ({}));
+    throw new Error(errData.error?.message || `Anthropic API error ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data.content?.[0]?.text || '';
+  const inputTokens  = data.usage?.input_tokens  || 0;
+  const outputTokens = data.usage?.output_tokens || 0;
+
+  trackCost(model, inputTokens, outputTokens);
+  return { text, inputTokens, outputTokens };
+}
+
+async function callOpenAI(model, systemPrompt, messages, maxTokens) {
+  const key = state.keys.openai;
+  if (!key) throw { type: 'no_key', provider: 'openai' };
+
+  const openaiMessages = [{ role: 'system', content: systemPrompt }, ...messages];
+
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`
+    },
+    body: JSON.stringify({ model, max_tokens: maxTokens, messages: openaiMessages, temperature: 0.8 })
+  });
+
+  if (resp.status === 401 || resp.status === 403) throw { type: 'invalid_key', provider: 'openai' };
+  if (resp.status === 429) throw { type: 'rate_limit', provider: 'openai' };
+  if (!resp.ok) {
+    const errData = await resp.json().catch(() => ({}));
+    throw new Error(errData.error?.message || `OpenAI API error ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  const inputTokens  = data.usage?.prompt_tokens     || 0;
+  const outputTokens = data.usage?.completion_tokens || 0;
+
+  trackCost(model, inputTokens, outputTokens);
+  return { text, inputTokens, outputTokens };
+}
+
+function trackCost(model, inputTokens, outputTokens) {
+  const pricing = PRICING[model];
+  if (!pricing) return;
+  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
+  state.sessionCost += cost;
+  updateCostDisplay();
+}
+
+function updateCostDisplay() {
+  const el = document.getElementById('conv-cost-display');
+  if (!el) return;
+  const model = state.settings.convModel;
+  const pricing = PRICING[model];
+  const inr = state.sessionCost * INR_RATE;
+  if (pricing?.free) {
+    el.textContent = `₹0.00 (free tier)`;
+  } else {
+    el.textContent = `Session: ₹${inr.toFixed(2)}`;
+  }
+}
+
+function handleLLMError(err, context = '') {
+  if (err.type === 'no_key') {
+    const links = {
+      gemini: 'aistudio.google.com/apikey',
+      anthropic: 'console.anthropic.com',
+      openai: 'platform.openai.com'
+    };
+    toast(`No ${err.provider} API key. Get yours at ${links[err.provider] || ''}`, 'error');
+  } else if (err.type === 'invalid_key') {
+    toast('Invalid API key. Please check your key in Settings.', 'error');
+  } else if (err.type === 'rate_limit') {
+    toast('Rate limited. Free tier limit reached. Try again in a minute, or switch provider in Settings.', 'warning');
+  } else {
+    toast(`Error${context ? ' in ' + context : ''}: ${err.message || 'Unknown error'}`, 'error');
+  }
+  console.error('LLM Error:', err);
+}
+
+// ============================================================
+// 5. TTS
+// ============================================================
+let currentAudio = null;
+let currentUtterance = null;
+let ttsOnEndCallback = null;
+
+async function speak(text, onEnd) {
+  stopSpeaking();
+  ttsOnEndCallback = onEnd || null;
+
+  const cleanText = text.replace(/[*_#`]/g, '');
+
+  if (state.keys.azureTts) {
+    try {
+      await speakAzure(cleanText, onEnd);
+      return;
+    } catch(e) {
+      console.warn('Azure TTS failed, falling back to Web Speech:', e);
+    }
+  }
+  speakWeb(cleanText, onEnd);
+}
+
+async function speakAzure(text, onEnd) {
+  const voice = state.settings.voice === 'sonia' ? 'en-GB-SoniaNeural' : 'en-GB-RyanNeural';
+  const speed = state.settings.speed;
+  const rateStr = speed >= 1 ? `+${Math.round((speed-1)*100)}%` : `-${Math.round((1-speed)*100)}%`;
+  const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-GB'>
+    <voice name='${voice}'>
+      <prosody rate='${rateStr}'>
+        ${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+      </prosody>
+    </voice>
+  </speak>`;
+
+  const region = state.keys.azureRegion || 'centralindia';
+  const resp = await fetch(
+    `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`,
+    {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': state.keys.azureTts,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3'
+      },
+      body: ssml
+    }
+  );
+  if (!resp.ok) throw new Error('Azure TTS ' + resp.status);
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  currentAudio = new Audio(url);
+  currentAudio.playbackRate = state.settings.speed;
+  currentAudio.onended = () => {
+    URL.revokeObjectURL(url);
+    if (ttsOnEndCallback) { ttsOnEndCallback(); ttsOnEndCallback = null; }
+  };
+  await currentAudio.play();
+}
+
+function speakWeb(text, onEnd) {
+  if (!window.speechSynthesis) {
+    toast('Text-to-speech not supported. Please use Chrome.', 'warning');
+    if (onEnd) onEnd();
+    return;
+  }
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang  = 'en-GB';
+  utterance.rate  = state.settings.speed;
+  const voices = speechSynthesis.getVoices();
+  const gbVoice = voices.find(v => v.lang === 'en-GB');
+  if (gbVoice) utterance.voice = gbVoice;
+  utterance.onend = () => {
+    if (ttsOnEndCallback) { ttsOnEndCallback(); ttsOnEndCallback = null; }
+  };
+  utterance.onerror = () => {
+    if (ttsOnEndCallback) { ttsOnEndCallback(); ttsOnEndCallback = null; }
+  };
+  currentUtterance = utterance;
+  speechSynthesis.speak(utterance);
+}
+
+function stopSpeaking() {
+  ttsOnEndCallback = null;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  currentUtterance = null;
+}
+
+// ============================================================
+// 6. STT (Web Speech API)
+// ============================================================
+let recognition     = null;
+let silenceTimer    = null;
+let currentTranscript = '';
+let isListening     = false;
+let sttOnResult     = null;
+let sttOnSilence    = null;
+let micAutoRestart  = true;
+
+function startListening(onResult, onSilence) {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    toast('Speech recognition not supported. Please use Chrome or Edge.', 'error');
+    return;
+  }
+  stopListening();
+
+  sttOnResult  = onResult;
+  sttOnSilence = onSilence;
+  currentTranscript = '';
+
+  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.continuous   = true;
+  recognition.interimResults = true;
+  recognition.lang         = 'en-GB';
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    let final   = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        final += e.results[i][0].transcript + ' ';
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    if (final) currentTranscript += final;
+    const display = (currentTranscript + interim).trim();
+    updateLiveTranscript(display);
+    if (sttOnResult) sttOnResult(display);
+
+    clearTimeout(silenceTimer);
+    if (display) {
+      silenceTimer = setTimeout(() => {
+        if (currentTranscript.trim() && sttOnSilence) {
+          sttOnSilence(currentTranscript.trim());
+        }
+      }, 3000);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      toast('Microphone permission denied. Please enable mic in browser settings.', 'error');
+      isListening = false;
+      updateMicUI(false);
+    } else if (e.error === 'no-speech') {
+      // Auto-restart on no-speech
+    }
+  };
+
+  recognition.onend = () => {
+    if (micAutoRestart && isListening && state.screen === 'conversation') {
+      try { recognition.start(); } catch(err) {}
+    }
+  };
+
+  try {
+    recognition.start();
+    isListening = true;
+    updateMicUI(true);
+  } catch(err) {
+    toast('Could not start microphone: ' + err.message, 'error');
+  }
+}
+
+function stopListening() {
+  clearTimeout(silenceTimer);
+  silenceTimer = null;
+  isListening = false;
+  micAutoRestart = false;
+  if (recognition) {
+    try { recognition.stop(); } catch(e) {}
+    recognition = null;
+  }
+  updateMicUI(false);
+  updateLiveTranscript('');
+}
+
+function updateMicUI(active) {
+  const btn = document.getElementById('mic-btn');
+  const statusEl = document.getElementById('mic-status');
+  if (btn) btn.classList.toggle('recording', active);
+  if (statusEl) statusEl.textContent = active ? '🔴 Listening...' : 'Tap mic to speak';
+}
+
+function updateLiveTranscript(text) {
+  const el = document.getElementById('live-transcript');
+  if (el) el.textContent = text || (isListening ? 'Listening...' : '');
+}
+
+function toggleMic() {
+  if (isListening) {
+    stopListening();
+  } else {
+    micAutoRestart = true;
+    startListening(
+      (text) => { /* live update */ },
+      (finalText) => { sendUserTurn(finalText); }
+    );
+  }
+}
+
+function tapToSpeak() {
+  currentTranscript = '';
+  updateLiveTranscript('');
+  micAutoRestart = true;
+  if (!isListening) {
+    startListening(
+      (text) => { /* live update */ },
+      (finalText) => { sendUserTurn(finalText); }
+    );
+  }
+}
+
+function sendCurrentTranscript() {
+  const text = currentTranscript.trim();
+  if (text) {
+    stopListening();
+    sendUserTurn(text);
+  }
+}
+
+// ============================================================
+// 7. SENTENCES FEATURE
+// ============================================================
+async function generateSentences(force = false) {
+  const d = today();
+  if (!force && state.data.sentences[d] && state.data.sentences[d].length > 0) {
+    renderSentences();
+    return;
+  }
+
+  const btn = document.getElementById('btn-gen-sentences');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span> Generating...'; }
+
+  const provider = state.settings.sentenceProvider;
+  const model    = state.settings.sentenceModel;
+  const level    = LEVEL_DESCRIPTIONS[state.settings.level];
+  const count    = state.settings.sentenceCount;
+
+  // Build previous sentences list (max 100)
+  const allPrev = [];
+  for (const [date, sents] of Object.entries(state.data.sentences)) {
+    if (date !== d) {
+      sents.forEach(s => allPrev.push(s.sentence));
+    }
+  }
+  const prevList = allPrev.slice(-100).join('\n');
+
+  const systemPrompt = `You are a British English language coach. Generate exactly ${count} natural British English sentences that a native speaker would actually use in everyday conversation.
+
+Learner level: ${level}
+
+Rules:
+- Each sentence must be something commonly said in Britain in daily life
+- Cover DIFFERENT everyday situations (never repeat themes from previous days)
+- Include natural British vocabulary, idioms, and phrasing
+- After each sentence, add:
+  (a) The situation where you'd use it
+  (b) Key vocabulary notes — explain any British-specific words/phrases
+- Do NOT repeat any sentence from the "Previously taught sentences" list below
+
+Previously taught sentences (do NOT repeat these or their close variations):
+${prevList || 'None yet.'}
+
+Respond in this exact JSON format and nothing else (no markdown, no backticks, no preamble):
+{"sentences":[{"sentence":"...","situation":"...","vocabulary":[{"word":"...","meaning":"..."}]}]}`;
+
+  try {
+    const result = await callLLM(provider, model, systemPrompt, [
+      { role: 'user', content: 'Generate the sentences now.' }
+    ], 1024);
+
+    const parsed = parseJSON(result.text);
+    const sentences = parsed.sentences.map(s => ({
+      ...s,
+      practised: false,
+      used_in_conversation: false,
+      times_reviewed: 0
+    }));
+    state.data.sentences[d] = sentences;
+    saveData();
+    renderSentences();
+    toast(`Generated ${sentences.length} new British English sentences!`, 'success');
+    updateDashboardStats();
+  } catch(err) {
+    handleLLMError(err, 'sentence generation');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate'; }
+  }
+}
+
+function renderSentences() {
+  const d = today();
+  const sents = state.data.sentences[d] || [];
+  const container = document.getElementById('sentences-list');
+  const genBtn = document.getElementById('btn-gen-sentences');
+
+  document.getElementById('sentences-level-label').textContent =
+    `${capitalise(state.settings.level)} level · ${state.settings.sentenceCount} sentences`;
+
+  if (sents.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="es-icon">📖</div><p>No sentences for today yet.<br>Tap "Generate" to get started.</p></div>`;
+    if (genBtn) genBtn.style.display = '';
+    renderSpacedRepetition();
+    return;
+  }
+
+  if (genBtn) genBtn.style.display = 'none';
+
+  container.innerHTML = sents.map((s, i) => buildSentenceCard(s, i, d, false)).join('');
+  renderSpacedRepetition();
+}
+
+function buildSentenceCard(s, i, date, isReview) {
+  const vocabHtml = s.vocabulary?.map(v =>
+    `<div class="vocab-item"><span class="vocab-word">${escapeHtml(v.word)}</span>: <span class="vocab-meaning">${escapeHtml(v.meaning)}</span></div>`
+  ).join('') || '';
+  const tag = isReview ? '<span class="tag tag-review">Review</span>' : '<span class="tag tag-new">New</span>';
+  return `
+  <div class="sentence-card" id="card-${date}-${i}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="sentence-num">${isReview ? 'Review' : 'Sentence'} ${i + 1}</div>
+      ${tag}
+    </div>
+    <div class="sentence-text">${escapeHtml(s.sentence)}</div>
+    <div class="sentence-situation">📍 ${escapeHtml(s.situation || '')}</div>
+    <div class="sentence-card-actions">
+      <button class="btn btn-secondary btn-sm" onclick="speakSentence('${escapeJs(s.sentence)}')" aria-label="Listen to sentence">🔊 Listen</button>
+      <button class="btn btn-outline btn-sm" onclick="togglePractise('${date}', ${i})">🎤 Practise</button>
+      <button class="vocab-toggle" onclick="toggleVocab('${date}', ${i})">📚 Vocabulary ▾</button>
+    </div>
+    <div class="vocab-panel" id="vocab-${date}-${i}">
+      ${vocabHtml || '<p style="font-size:0.82rem;color:var(--text-muted);">No vocabulary notes.</p>'}
+    </div>
+    <div class="practise-area" id="practise-${date}-${i}">
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:8px;">Say the sentence aloud. We'll compare what we hear.</p>
+      <button class="btn btn-coral btn-sm" onclick="practiseSentence('${escapeJs(s.sentence)}', '${date}', ${i})" aria-label="Start microphone for practice">🎙️ Start Speaking</button>
+      <div class="diff-result" id="diff-${date}-${i}"></div>
+    </div>
+  </div>`;
+}
+
+function toggleVocab(date, idx) {
+  const panel = document.getElementById(`vocab-${date}-${idx}`);
+  if (panel) panel.classList.toggle('open');
+}
+
+function togglePractise(date, idx) {
+  const area = document.getElementById(`practise-${date}-${idx}`);
+  if (area) area.classList.toggle('open');
+}
+
+function speakSentence(text) {
+  speak(text);
+}
+
+async function practiseSentence(sentence, date, idx) {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    toast('Speech recognition requires Chrome or Edge.', 'error');
+    return;
+  }
+  const diffEl = document.getElementById(`diff-${date}-${idx}`);
+  if (diffEl) diffEl.innerHTML = '<span style="color:var(--text-muted)">🎙️ Listening... speak now!</span>';
+
+  const btn = document.querySelector(`#card-${date}-${idx} .btn-coral`);
+  if (btn) { btn.disabled = true; btn.textContent = '🔴 Listening...'; }
+
+  let spoken = '';
+  const tempRec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  tempRec.lang = 'en-GB';
+  tempRec.continuous = false;
+  tempRec.interimResults = false;
+
+  await new Promise((resolve) => {
+    tempRec.onresult = (e) => {
+      spoken = e.results[0][0].transcript;
+    };
+    tempRec.onerror = () => resolve();
+    tempRec.onend = () => resolve();
+    tempRec.start();
+    setTimeout(() => { try { tempRec.stop(); } catch(e){} resolve(); }, 7000);
+  });
+
+  if (btn) { btn.disabled = false; btn.textContent = '🎙️ Start Speaking'; }
+
+  if (!spoken) {
+    if (diffEl) diffEl.innerHTML = '<span style="color:var(--text-muted)">Nothing heard. Try again.</span>';
+    return;
+  }
+
+  const diffHtml = diffWords(sentence, spoken);
+  if (diffEl) diffEl.innerHTML = `<strong>You said:</strong><br>${diffHtml}`;
+
+  // Mark as practised
+  if (state.data.sentences[date] && state.data.sentences[date][idx]) {
+    state.data.sentences[date][idx].practised = true;
+    state.data.sentences[date][idx].times_reviewed = (state.data.sentences[date][idx].times_reviewed || 0) + 1;
+    saveData();
+  }
+}
+
+function diffWords(original, spoken) {
+  const origWords   = original.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/);
+  const spokenWords = spoken.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/);
+  let html = '';
+
+  let si = 0;
+  for (let oi = 0; oi < origWords.length; oi++) {
+    const ow = origWords[oi];
+    if (si < spokenWords.length && spokenWords[si] === ow) {
+      html += `<span class="diff-correct">${escapeHtml(spokenWords[si])}</span> `;
+      si++;
+    } else if (si < spokenWords.length) {
+      html += `<span class="diff-wrong">${escapeHtml(spokenWords[si])}</span> <span class="diff-missing">[${escapeHtml(ow)}]</span> `;
+      si++;
+    } else {
+      html += `<span class="diff-missing">[${escapeHtml(ow)}]</span> `;
+    }
+  }
+  return html.trim();
+}
+
+function renderSpacedRepetition() {
+  const d = today();
+  const todayDate = new Date(d);
+  const srSentences = [];
+
+  for (const days of SPACED_REPETITION_DAYS) {
+    const pastDate = new Date(todayDate);
+    pastDate.setDate(pastDate.getDate() - days);
+    const pastStr = pastDate.toISOString().slice(0, 10);
+    const sents = state.data.sentences[pastStr];
+    if (sents && sents.length > 0) {
+      sents.forEach((s, i) => srSentences.push({ s, i, date: pastStr, daysAgo: days }));
+    }
+  }
+
+  const titleEl  = document.getElementById('spaced-rep-title');
+  const listEl   = document.getElementById('spaced-rep-list');
+  const section  = document.getElementById('spaced-rep-section');
+
+  if (srSentences.length === 0) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+  if (section) section.style.display = '';
+  if (titleEl) titleEl.textContent = `📅 Review Previous Sentences (${srSentences.length})`;
+  if (listEl) {
+    listEl.innerHTML = srSentences.map(({ s, i, date, daysAgo }) =>
+      `<div style="margin-bottom:4px;font-size:0.75rem;color:var(--text-muted);padding-top:8px;">${daysAgo} day${daysAgo>1?'s':''} ago (${date})</div>` +
+      buildSentenceCard(s, i, date, true)
+    ).join('');
+  }
+}
+
+function toggleSpacedRep() {
+  const content = document.getElementById('spaced-rep-content');
+  const arrow   = document.getElementById('spaced-rep-arrow');
+  if (content) content.classList.toggle('open');
+  if (arrow) arrow.textContent = content?.classList.contains('open') ? '▲' : '▼';
+}
+
+// ============================================================
+// 8. CONVERSATION FEATURE
+// ============================================================
+function initConversationScreen() {
+  const aiName = state.settings.voice === 'sonia' ? 'Emma' : 'Oliver';
+  const nameLabel = document.getElementById('ai-name-label');
+  if (nameLabel) nameLabel.textContent = aiName;
+
+  const grid = document.getElementById('topic-grid');
+  if (grid) {
+    grid.innerHTML = TOPICS.map(t =>
+      `<button class="topic-btn" onclick="selectTopic(this, '${escapeJs(t)}')">${t}</button>`
+    ).join('');
+  }
+
+  state.selectedTopic = null;
+  state.useTodaySentences = true;
+  document.getElementById('use-sentences-toggle').classList.add('selected');
+  document.getElementById('use-sentences-checkbox').textContent = '✓';
+
+  // Show topic selection, hide chat
+  document.getElementById('topic-selection').style.display = '';
+  document.getElementById('chat-ui').classList.remove('active');
+  document.getElementById('session-review').classList.remove('active');
+  document.getElementById('btn-end-conv').style.display = 'none';
+  document.getElementById('conv-header-title').textContent = 'New Conversation';
+  document.getElementById('conv-header-sub').textContent = 'Choose a topic to begin';
+  document.getElementById('conv-cost-display').textContent = '';
+}
+
+function selectTopic(btn, topic) {
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.selectedTopic = topic;
+}
+
+function toggleUseSentences() {
+  state.useTodaySentences = !state.useTodaySentences;
+  const toggle = document.getElementById('use-sentences-toggle');
+  const check  = document.getElementById('use-sentences-checkbox');
+  toggle.classList.toggle('selected', state.useTodaySentences);
+  check.textContent = state.useTodaySentences ? '✓' : '';
+}
+
+async function startConversation() {
+  if (!state.selectedTopic) {
+    toast('Please select a topic first.', 'warning');
+    return;
+  }
+
+  const provider = state.settings.convProvider;
+  if (!state.keys[provider]) {
+    handleLLMError({ type: 'no_key', provider });
+    return;
+  }
+
+  const aiName = state.settings.voice === 'sonia' ? 'Emma' : 'Oliver';
+  state.session = {
+    timestamp:     new Date().toISOString(),
+    topic:         state.selectedTopic,
+    provider,
+    model_used:    state.settings.convModel,
+    level:         state.settings.level,
+    duration_seconds: 0,
+    exchanges:     [],
+    internalNotes: [],
+    review:        null,
+  };
+  state.sessionCost    = 0;
+  state.sessionStartTime = Date.now();
+  micAutoRestart = true;
+
+  // Switch UI
+  document.getElementById('topic-selection').style.display = 'none';
+  document.getElementById('chat-ui').classList.add('active');
+  document.getElementById('session-review').classList.remove('active');
+  document.getElementById('btn-end-conv').style.display = '';
+  document.getElementById('conv-header-title').textContent = aiName + ' · ' + state.selectedTopic;
+  document.getElementById('conv-header-sub').textContent = 'Tap mic or speak after AI';
+  document.getElementById('chat-messages').innerHTML = '';
+  currentTranscript = '';
+
+  const systemPrompt = buildConversationSystemPrompt(aiName);
+
+  showTypingIndicator();
+
+  try {
+    const result = await callLLM(provider, state.settings.convModel, systemPrompt,
+      [{ role: 'user', content: 'Please start the conversation with a warm greeting and opening question.' }], 256);
+    hideTypingIndicator();
+
+    const parsed = safeParseConvResponse(result.text);
+    const aiText = parsed.spoken_text || result.text;
+    if (parsed.internal_notes) state.session.internalNotes.push(parsed.internal_notes);
+
+    addChatMessage('ai', aiText, aiName);
+    state.session.exchanges.push({ role: 'ai', text: aiText });
+
+    updateCostDisplay();
+
+    speak(aiText, () => {
+      if (state.screen === 'conversation' && state.session) {
+        micAutoRestart = true;
+        startListening(
+          () => {},
+          (finalText) => { sendUserTurn(finalText); }
+        );
+      }
+    });
+  } catch(err) {
+    hideTypingIndicator();
+    handleLLMError(err, 'starting conversation');
+  }
+}
+
+function buildConversationSystemPrompt(aiName) {
+  const level = LEVEL_DESCRIPTIONS[state.settings.level];
+  const d = today();
+  const todaySents = state.data.sentences[d] || [];
+
+  let sentenceSection = '';
+  if (state.useTodaySentences && todaySents.length > 0) {
+    const sentList = todaySents.map(s => `- "${s.sentence}"`).join('\n');
+    sentenceSection = `\n\nToday's sentences to weave into conversation naturally. Steer the conversation so the user gets opportunities to use these:\n${sentList}\nTry to create situations where these phrases would naturally come up. If the user uses one correctly, respond naturally and move on. If they miss an opportunity, gently create another opening.`;
+  }
+
+  return `You are a warm, natural British English conversation partner. Your name is ${aiName}. You speak in natural, fluent British English — not formal, not robotic. Think of yourself as a friendly colleague having a chat over tea.
+
+Learner level: ${level}
+
+Topic: ${state.selectedTopic}
+
+Your role:
+1. Have a genuine, flowing conversation on the topic
+2. Ask follow-up questions that feel natural, not like an interview
+3. Keep your responses concise (2-3 sentences max) so the conversation flows back and forth quickly
+4. Use natural British expressions, fillers ("right", "well", "I reckon", "fair enough", "brilliant"), and contractions
+5. Gently adapt your vocabulary complexity to the learner's level
+6. NEVER break character to correct the user mid-conversation — save all corrections for the end-of-session review
+${sentenceSection}
+
+Respond in this exact JSON format and nothing else (no markdown, no backticks, no preamble):
+{"spoken_text":"Your conversational response here","internal_notes":"Any observations about the user's English"}`;
+}
+
+function safeParseConvResponse(text) {
+  try {
+    return parseJSON(text);
+  } catch(e) {
+    return { spoken_text: text, internal_notes: '' };
+  }
+}
+
+async function sendUserTurn(text) {
+  if (!text || !state.session) return;
+  if (isListening) stopListening();
+
+  currentTranscript = '';
+  updateLiveTranscript('');
+
+  const aiName = state.settings.voice === 'sonia' ? 'Emma' : 'Oliver';
+
+  addChatMessage('user', text, 'You');
+  state.session.exchanges.push({ role: 'user', text });
+
+  showTypingIndicator();
+
+  // Build last 10 exchanges for context
+  const exchanges = state.session.exchanges;
+  const lastExchanges = exchanges.slice(-10);
+  const messages = lastExchanges.map(e => ({
+    role:    e.role === 'ai' ? 'assistant' : 'user',
+    content: e.text
+  }));
+
+  const systemPrompt = buildConversationSystemPrompt(aiName);
+  const provider = state.settings.convProvider;
+
+  try {
+    const result = await callLLM(provider, state.settings.convModel, systemPrompt, messages, 256);
+    hideTypingIndicator();
+
+    const parsed = safeParseConvResponse(result.text);
+    const aiText = parsed.spoken_text || result.text;
+    if (parsed.internal_notes) state.session.internalNotes.push(parsed.internal_notes);
+
+    addChatMessage('ai', aiText, aiName);
+    state.session.exchanges.push({ role: 'ai', text: aiText });
+
+    updateCostDisplay();
+
+    speak(aiText, () => {
+      if (state.screen === 'conversation' && state.session) {
+        micAutoRestart = true;
+        startListening(
+          () => {},
+          (finalText) => { sendUserTurn(finalText); }
+        );
+      }
+    });
+  } catch(err) {
+    hideTypingIndicator();
+    handleLLMError(err, 'conversation');
+    // Restart listening even on error
+    setTimeout(() => {
+      if (state.screen === 'conversation' && state.session) {
+        micAutoRestart = true;
+        startListening(() => {}, (t) => sendUserTurn(t));
+      }
+    }, 2000);
+  }
+}
+
+function addChatMessage(role, text, name) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-name">${escapeHtml(name)}</div>
+    <div class="msg-bubble">${escapeHtml(text)}</div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTypingIndicator() {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'chat-msg ai';
+  div.id = 'typing-indicator';
+  div.innerHTML = `
+    <div class="msg-name">${state.settings.voice === 'sonia' ? 'Emma' : 'Oliver'}</div>
+    <div class="thinking-dots"><span></span><span></span><span></span></div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+
+  // Show status
+  const statusEl = document.getElementById('mic-status');
+  if (statusEl) statusEl.textContent = `${state.settings.voice === 'sonia' ? 'Emma' : 'Oliver'} is thinking...`;
+}
+
+function hideTypingIndicator() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+  const statusEl = document.getElementById('mic-status');
+  if (statusEl) statusEl.textContent = `${state.settings.voice === 'sonia' ? 'Emma' : 'Oliver'} is speaking...`;
+}
+
+async function endConversation() {
+  stopListening();
+  stopSpeaking();
+
+  if (!state.session) {
+    showScreen('dashboard');
+    return;
+  }
+
+  const duration = Math.round((Date.now() - state.sessionStartTime) / 1000);
+  state.session.duration_seconds = duration;
+
+  // Switch to review
+  document.getElementById('chat-ui').classList.remove('active');
+  document.getElementById('session-review').classList.add('active');
+  document.getElementById('btn-end-conv').style.display = 'none';
+  document.getElementById('score-label').textContent = '...';
+  document.getElementById('review-content').innerHTML = `
+    <div style="text-align:center;padding:40px 20px;">
+      <div class="thinking-dots" style="display:inline-flex;"><span></span><span></span><span></span></div>
+      <p style="margin-top:12px;font-size:0.9rem;color:var(--text-muted);">Analysing your conversation...</p>
+    </div>
+  `;
+
+  try {
+    const review = await generateReview();
+    state.session.review = review;
+
+    // Save conversation
+    const d = today();
+    if (!state.data.conversations[d]) state.data.conversations[d] = [];
+    state.data.conversations[d].push(state.session);
+    saveData();
+
+    renderReview(review);
+    updateDashboardStats();
+  } catch(err) {
+    handleLLMError(err, 'review generation');
+    document.getElementById('review-content').innerHTML = `<p style="padding:16px;color:var(--text-muted);">Could not generate review. Your conversation has been saved.</p>`;
+    const d = today();
+    if (!state.data.conversations[d]) state.data.conversations[d] = [];
+    state.data.conversations[d].push(state.session);
+    saveData();
+  }
+
+  state.session = null;
+}
+
+async function generateReview() {
+  const exchanges = state.session.exchanges;
+  const d = today();
+  const todaySents = state.data.sentences[d] || [];
+
+  const transcriptLines = exchanges.map(e =>
+    `${e.role === 'ai' ? 'Oliver/Emma' : 'Learner'}: ${e.text}`
+  ).join('\n');
+
+  const sentList = todaySents.map(s => s.sentence).join('\n');
+  const notesBlock = state.session.internalNotes.join(' | ');
+
+  const systemPrompt = `You are a British English language coach reviewing a practice conversation.
+
+Learner level: ${LEVEL_DESCRIPTIONS[state.settings.level]}
+
+Full conversation transcript:
+${transcriptLines}
+
+${notesBlock ? `Observer notes from conversation: ${notesBlock}` : ''}
+
+${sentList ? `Today's target sentences:\n${sentList}` : ''}
+
+Provide your analysis in this exact JSON format and nothing else (no markdown, no backticks, no preamble):
+{"overall_rating":"7","overall_feedback":"...","mistakes":[{"what_user_said":"...","issue":"...","correction":"...","explanation":"...","ai_question":"..."}],"well_done":["..."],"sentences_used":["..."],"sentences_missed":["..."],"tips_for_tomorrow":"..."}`;
+
+  const result = await callLLM(
+    state.settings.convProvider,
+    state.settings.convModel,
+    systemPrompt,
+    [{ role: 'user', content: 'Please provide the review now.' }],
+    1024
+  );
+
+  return parseJSON(result.text);
+}
+
+function renderReview(review) {
+  const score = parseInt(review.overall_rating) || 0;
+  const circle = document.getElementById('score-ring-circle');
+  const label  = document.getElementById('score-label');
+  if (circle) {
+    const circumference = 314;
+    const offset = circumference - (score / 10) * circumference;
+    circle.style.strokeDashoffset = offset;
+    circle.style.stroke = score >= 7 ? '#2d7a2d' : score >= 5 ? 'var(--teal)' : 'var(--coral)';
+  }
+  if (label) label.textContent = `${score}/10`;
+
+  const d = today();
+  const todaySents = state.data.sentences[d] || [];
+
+  // Mark sentences used in conversation
+  if (review.sentences_used && Array.isArray(review.sentences_used)) {
+    review.sentences_used.forEach(used => {
+      const idx = todaySents.findIndex(s =>
+        s.sentence.toLowerCase().includes(used.toLowerCase().slice(0, 20))
+      );
+      if (idx >= 0) {
+        state.data.sentences[d][idx].used_in_conversation = true;
+        saveData();
+      }
+    });
+  }
+
+  const mistakesHtml = Array.isArray(review.mistakes) && review.mistakes.length > 0 ? `
+    <div class="review-section">
+      <h3>🔍 Corrections</h3>
+      <div class="overflow-table">
+        <table class="mistakes-table">
+          <thead><tr><th>What You Said</th><th>Better Way</th><th>Why</th></tr></thead>
+          <tbody>
+            ${review.mistakes.map(m => `
+              <tr>
+                <td><span class="mistake-original">${escapeHtml(m.what_user_said || '')}</span></td>
+                <td><span class="mistake-correction">${escapeHtml(m.correction || '')}</span></td>
+                <td style="color:var(--text-secondary);font-size:0.8rem;">${escapeHtml(m.explanation || '')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` : '<div class="review-section"><h3>🔍 Corrections</h3><p style="color:var(--text-muted);font-size:0.9rem;">No major corrections — excellent work!</p></div>';
+
+  const wellDoneHtml = Array.isArray(review.well_done) && review.well_done.length > 0 ? `
+    <div class="review-section">
+      <h3>✅ Well Done</h3>
+      <ul class="well-done-list">
+        ${review.well_done.map(w => `<li>${escapeHtml(w)}</li>`).join('')}
+      </ul>
+    </div>
+  ` : '';
+
+  const sentencesHtml = (review.sentences_used?.length > 0 || review.sentences_missed?.length > 0) ? `
+    <div class="review-section">
+      <h3>📝 Today's Sentences</h3>
+      <div class="sentences-used-chips">
+        ${(review.sentences_used || []).map(s => `<span class="chip used">✓ ${escapeHtml(s)}</span>`).join('')}
+        ${(review.sentences_missed || []).map(s => `<span class="chip missed">✗ ${escapeHtml(s)}</span>`).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  document.getElementById('review-content').innerHTML = `
+    <div class="review-section">
+      <div class="review-feedback">${escapeHtml(review.overall_feedback || '')}</div>
+    </div>
+    ${wellDoneHtml}
+    ${mistakesHtml}
+    ${sentencesHtml}
+    ${review.tips_for_tomorrow ? `
+      <div class="review-section">
+        <h3>💡 Tomorrow's Focus</h3>
+        <div class="tip-box"><p>${escapeHtml(review.tips_for_tomorrow)}</p></div>
+      </div>
+    ` : ''}
+  `;
+
+  state.currentReview = review;
+}
+
+// ============================================================
+// 9. HISTORY FEATURE
+// ============================================================
+function renderHistory() {
+  const listEl = document.getElementById('history-dates-list');
+  if (!listEl) return;
+
+  document.getElementById('history-list-view').style.display = '';
+  document.getElementById('history-day-view').classList.remove('active');
+
+  const dates = Object.keys(state.data.conversations).sort().reverse();
+  if (dates.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="es-icon">📅</div><p>No conversations yet.<br>Start chatting to build your history!</p></div>`;
+    return;
+  }
+
+  listEl.innerHTML = dates.map(d => {
+    const convos = state.data.conversations[d] || [];
+    const ratings = convos.map(c => parseInt(c.review?.overall_rating) || 0).filter(r => r > 0);
+    const avgRating = ratings.length > 0 ? (ratings.reduce((a,b) => a+b, 0) / ratings.length).toFixed(1) : '–';
+    const dateObj = new Date(d + 'T12:00:00');
+    const label = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    return `
+      <div class="history-date-item" onclick="showHistoryDay('${d}')">
+        <div>
+          <div class="hd-date">${label}</div>
+          <div class="hd-meta">${convos.length} conversation${convos.length!==1?'s':''} · avg score ${avgRating}</div>
+        </div>
+        <span class="hd-arrow">›</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function showHistoryDay(date) {
+  document.getElementById('history-list-view').style.display = 'none';
+  const dayView = document.getElementById('history-day-view');
+  dayView.classList.add('active');
+
+  const convos = state.data.conversations[date] || [];
+  const sents  = state.data.sentences[date] || [];
+  const dateObj = new Date(date + 'T12:00:00');
+  const label = dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  let html = `<h2 style="font-size:1.2rem;margin-bottom:12px;">${label}</h2>`;
+
+  if (convos.length > 0) {
+    html += '<h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:8px;">Conversations</h3>';
+    html += convos.map((c, ci) => {
+      const rating = c.review?.overall_rating || '–';
+      const dur = c.duration_seconds ? formatDuration(c.duration_seconds) : '';
+      return `
+        <div class="conv-summary-card" onclick="toggleHistoryConv('${date}', ${ci})">
+          <div class="cs-header">
+            <div class="cs-topic">${escapeHtml(c.topic || '')}</div>
+            <div class="cs-rating">${rating !== '–' ? rating + '/10' : '–'}</div>
+          </div>
+          <div class="cs-meta">${escapeHtml(c.model_used || '')} · ${dur}</div>
+          <div id="hist-conv-detail-${date}-${ci}" style="display:none;margin-top:10px;border-top:1px solid var(--warm-gray-2);padding-top:10px;">
+            ${c.exchanges ? c.exchanges.map(e => `
+              <div class="transcript-item ${e.role === 'user' ? 'user-turn' : ''}">
+                <div class="ti-role">${e.role === 'ai' ? 'Oliver/Emma' : 'You'}</div>
+                <div>${escapeHtml(e.text)}</div>
+              </div>
+            `).join('') : ''}
+            ${c.review ? `
+              <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--warm-gray-2);">
+                <strong style="font-size:0.85rem;">Feedback:</strong>
+                <p style="font-size:0.83rem;color:var(--text-secondary);margin-top:4px;">${escapeHtml(c.review.overall_feedback || '')}</p>
+                ${c.review.tips_for_tomorrow ? `<p style="font-size:0.82rem;color:var(--teal);margin-top:6px;">💡 ${escapeHtml(c.review.tips_for_tomorrow)}</p>` : ''}
+              </div>
+            ` : ''}
+            <div style="margin-top:10px;">
+              <button class="btn btn-secondary btn-sm" onclick="exportConvCSV('${date}', ${ci})">📥 Export CSV</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (sents.length > 0) {
+    html += '<h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:16px 0 8px;">Sentences</h3>';
+    html += sents.map((s, i) => `
+      <div style="background:var(--warm-gray-1);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:0.88rem;">
+        <div style="font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:4px;">${escapeHtml(s.sentence)}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);">${escapeHtml(s.situation || '')}
+          ${s.practised ? ' · ✓ Practised' : ''}
+          ${s.used_in_conversation ? ' · 💬 Used in conversation' : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('history-day-content').innerHTML = html;
+}
+
+function toggleHistoryConv(date, idx) {
+  const el = document.getElementById(`hist-conv-detail-${date}-${idx}`);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function showHistoryList() {
+  document.getElementById('history-list-view').style.display = '';
+  document.getElementById('history-day-view').classList.remove('active');
+}
+
+function exportConvCSV(date, idx) {
+  const conv = state.data.conversations[date]?.[idx];
+  if (!conv) return;
+  exportConversationToCSV([conv], `english-coach-${date}-${idx+1}.csv`);
+}
+
+function exportSessionCSV() {
+  if (!state.currentReview) { toast('No review data to export.', 'warning'); return; }
+  // Find the last saved conversation
+  const d = today();
+  const convs = state.data.conversations[d] || [];
+  if (convs.length === 0) { toast('No conversation to export.', 'warning'); return; }
+  exportConversationToCSV([convs[convs.length - 1]], `english-coach-session-${d}.csv`);
+}
+
+function exportAllCSV() {
+  const allConvs = [];
+  for (const [date, convs] of Object.entries(state.data.conversations)) {
+    allConvs.push(...convs);
+  }
+  if (allConvs.length === 0) { toast('No conversations to export.', 'warning'); return; }
+  exportConversationToCSV(allConvs, `english-coach-all-history.csv`);
+}
+
+function exportConversationToCSV(conversations, filename) {
+  const rows = [['S.No.', 'Date', 'Topic', 'AI Question', 'User Answer', 'Mistake', 'Correction', 'Explanation']];
+  let sno = 1;
+
+  for (const conv of conversations) {
+    const exchanges = conv.exchanges || [];
+    const mistakes  = conv.review?.mistakes || [];
+    let qIdx = 0;
+
+    for (let i = 0; i < exchanges.length; i++) {
+      const e = exchanges[i];
+      if (e.role === 'user') {
+        const aiQ = i > 0 ? exchanges[i-1].text : '';
+        const mistake = mistakes[qIdx] || {};
+        rows.push([
+          sno++,
+          conv.timestamp?.slice(0, 10) || '',
+          conv.topic || '',
+          csvEsc(aiQ),
+          csvEsc(e.text),
+          csvEsc(mistake.what_user_said || ''),
+          csvEsc(mistake.correction || ''),
+          csvEsc(mistake.explanation || ''),
+        ]);
+        qIdx++;
+      }
+    }
+  }
+
+  const csv = rows.map(r => r.join(',')).join('\n');
+  downloadFile(csv, filename, 'text/csv');
+  toast('CSV exported successfully!', 'success');
+}
+
+// ============================================================
+// 10. BACKUP & RESTORE
+// ============================================================
+function backupData() {
+  const backup = {
+    version:     1,
+    exported_at: new Date().toISOString(),
+    settings:    state.settings,
+    sentences:   state.data.sentences,
+    conversations: state.data.conversations,
+    stats:       state.data.stats,
+  };
+  const d = today();
+  downloadFile(JSON.stringify(backup, null, 2), `english-coach-backup-${d}.json`, 'application/json');
+  state.data.stats.lastBackup = Date.now();
+  saveData();
+  document.getElementById('backup-banner').style.display = 'none';
+  toast('Backup saved! Keep this file safe.', 'success');
+}
+
+function restoreData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.version || !backup.sentences) {
+        toast('Invalid backup file.', 'error');
+        return;
+      }
+      if (!confirm('This will merge with your existing data. Existing data for overlapping dates will be kept. Continue?')) return;
+
+      let newSentences = 0, newConvos = 0;
+
+      // Merge sentences: keep whichever date has more entries
+      for (const [date, sents] of Object.entries(backup.sentences || {})) {
+        if (!state.data.sentences[date] || state.data.sentences[date].length < sents.length) {
+          state.data.sentences[date] = sents;
+          newSentences += sents.length;
+        }
+      }
+
+      // Merge conversations: add missing ones, never delete
+      for (const [date, convs] of Object.entries(backup.conversations || {})) {
+        if (!state.data.conversations[date]) {
+          state.data.conversations[date] = convs;
+          newConvos += convs.length;
+        } else {
+          // Add convos that don't exist (by timestamp)
+          const existing = new Set(state.data.conversations[date].map(c => c.timestamp));
+          const toAdd = convs.filter(c => !existing.has(c.timestamp));
+          state.data.conversations[date].push(...toAdd);
+          newConvos += toAdd.length;
+        }
+      }
+
+      saveData();
+      renderHistory();
+      updateDashboardStats();
+      toast(`Data restored! ${newSentences} sentences and ${newConvos} conversations imported.`, 'success');
+    } catch(err) {
+      toast('Could not parse backup file: ' + err.message, 'error');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// 11. STATS
+// ============================================================
+function calcStreak() {
+  const dates = Object.keys(state.data.conversations)
+    .filter(d => state.data.conversations[d].length > 0)
+    .sort().reverse();
+  if (dates.length === 0) return 0;
+
+  let streak = 0;
+  let current = new Date(today());
+
+  for (const d of dates) {
+    const date = new Date(d + 'T12:00:00');
+    const diff  = Math.round((current - date) / (1000 * 60 * 60 * 24));
+    if (diff <= 1) {
+      streak++;
+      current = date;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function calcAvgRating() {
+  const ratings = [];
+  for (const convs of Object.values(state.data.conversations)) {
+    for (const c of convs) {
+      const r = parseInt(c.review?.overall_rating);
+      if (r > 0) ratings.push(r);
+    }
+  }
+  if (ratings.length === 0) return null;
+  return (ratings.reduce((a,b) => a+b, 0) / ratings.length).toFixed(1);
+}
+
+function getTotalSentences() {
+  return Object.values(state.data.sentences).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+function getTotalConversations() {
+  return Object.values(state.data.conversations).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+function updateDashboardStats() {
+  const streak   = calcStreak();
+  const sents    = getTotalSentences();
+  const convos   = getTotalConversations();
+  const avg      = calcAvgRating();
+
+  const el = (id) => document.getElementById(id);
+  if (el('stat-streak'))    el('stat-streak').textContent   = streak;
+  if (el('stat-sentences')) el('stat-sentences').textContent = sents;
+  if (el('stat-convos'))    el('stat-convos').textContent   = convos;
+  if (el('stat-avg'))       el('stat-avg').textContent      = avg || '–';
+
+  // Update sentences button
+  const sentsBtnSub = el('sentences-btn-sub');
+  if (sentsBtnSub) {
+    const todaySents = state.data.sentences[today()] || [];
+    sentsBtnSub.textContent = todaySents.length > 0
+      ? `${todaySents.length} sentences today` : 'Generate today\'s sentences';
+  }
+
+  // Update model badge
+  const badge = el('model-badge');
+  if (badge) {
+    const model   = state.settings.convModel;
+    const pricing = PRICING[model];
+    const label   = model.includes('gemini') ? '🟢 ' + model.replace('gemini-','Gemini ') :
+                    model.includes('claude') ? '🟣 Claude' : '⚫ GPT';
+    badge.textContent = label + (pricing?.free ? ' (Free)' : '');
+  }
+
+  // Date display
+  const dateEl = el('dashboard-date');
+  if (dateEl) {
+    const d = new Date();
+    dateEl.textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  const dayMsg = el('dashboard-day-msg');
+  if (dayMsg) {
+    const h = new Date().getHours();
+    dayMsg.textContent = h < 12 ? 'Good morning! Ready to practise?' :
+                         h < 17 ? 'Good afternoon! Time for some English?' :
+                         'Good evening! How about a quick session?';
+  }
+
+  // Backup banner
+  const banner = el('backup-banner');
+  if (banner) {
+    const lastBackup = state.data.stats.lastBackup;
+    if (!lastBackup || (Date.now() - lastBackup > 7 * 24 * 60 * 60 * 1000)) {
+      banner.style.display = 'flex';
+    }
+  }
+
+  renderRatingChart();
+  updateStorageDisplay();
+}
+
+// ============================================================
+// 12. SVG RATING CHART
+// ============================================================
+function renderRatingChart() {
+  const svg = document.getElementById('rating-chart');
+  if (!svg) return;
+
+  const allRatings = [];
+  const sortedDates = Object.keys(state.data.conversations).sort();
+  for (const d of sortedDates) {
+    for (const c of state.data.conversations[d]) {
+      const r = parseInt(c.review?.overall_rating);
+      if (r > 0) allRatings.push(r);
+    }
+  }
+
+  const ratings = allRatings.slice(-14);
+  if (ratings.length === 0) {
+    svg.innerHTML = `<text x="140" y="48" text-anchor="middle" fill="var(--text-muted)" font-size="12" font-family="DM Sans">No sessions yet</text>`;
+    return;
+  }
+
+  const W = 280, H = 80, PAD = 12;
+  const xStep = ratings.length > 1 ? (W - PAD * 2) / (ratings.length - 1) : 0;
+  const yScale = (v) => H - PAD - ((v - 1) / 9) * (H - PAD * 2);
+
+  const points = ratings.map((r, i) => [PAD + i * xStep, yScale(r)]);
+  const polyline = points.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+
+  // Grid lines
+  let gridHtml = '';
+  for (let v = 2; v <= 10; v += 2) {
+    const y = yScale(v).toFixed(1);
+    gridHtml += `<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="var(--warm-gray-2)" stroke-width="1"/>`;
+    gridHtml += `<text x="${PAD-2}" y="${parseFloat(y)+3}" text-anchor="end" font-size="8" fill="var(--text-muted)" font-family="DM Sans">${v}</text>`;
+  }
+
+  const dotsHtml = points.map((p, i) =>
+    `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="var(--teal)">
+      <title>Session ${i+1}: ${ratings[i]}/10</title>
+    </circle>`
+  ).join('');
+
+  svg.innerHTML = `
+    ${gridHtml}
+    <polyline points="${polyline}" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dotsHtml}
+  `;
+}
+
+// ============================================================
+// 13. SETTINGS
+// ============================================================
+function updateModelDropdown(type) {
+  const providerEl = document.getElementById(`settings-${type === 'sentence' ? 'sentence' : 'conv'}-provider`);
+  const modelEl    = document.getElementById(`settings-${type === 'sentence' ? 'sentence' : 'conv'}-model`);
+  if (!providerEl || !modelEl) return;
+
+  const provider = providerEl.value;
+  const models   = MODELS[provider] || [];
+  const current  = type === 'sentence' ? state.settings.sentenceModel : state.settings.convModel;
+
+  modelEl.innerHTML = models.map(m => {
+    const p = PRICING[m.id];
+    const costLabel = p?.free ? '~₹0/hr (free tier)' : `~₹${((p?.input || 0) * 0.5 * INR_RATE / 1000).toFixed(0)}/hr`;
+    return `<option value="${m.id}" ${m.id === current ? 'selected' : ''}>${m.label} — ${costLabel}</option>`;
+  }).join('');
+}
+
+function saveSettingsKeys() {
+  state.keys.gemini     = document.getElementById('settings-key-gemini')?.value.trim()  || state.keys.gemini;
+  state.keys.anthropic  = document.getElementById('settings-key-anthropic')?.value.trim() || state.keys.anthropic;
+  state.keys.openai     = document.getElementById('settings-key-openai')?.value.trim()  || state.keys.openai;
+  state.keys.azureTts   = document.getElementById('settings-key-azure')?.value.trim()   || state.keys.azureTts;
+  state.keys.azureRegion= document.getElementById('settings-azure-region')?.value.trim() || state.keys.azureRegion;
+  saveKeys();
+  toast('API keys saved!', 'success');
+}
+
+function saveSettingsModels() {
+  state.settings.sentenceProvider = document.getElementById('settings-sentence-provider')?.value || state.settings.sentenceProvider;
+  state.settings.sentenceModel    = document.getElementById('settings-sentence-model')?.value    || state.settings.sentenceModel;
+  state.settings.convProvider     = document.getElementById('settings-conv-provider')?.value     || state.settings.convProvider;
+  state.settings.convModel        = document.getElementById('settings-conv-model')?.value        || state.settings.convModel;
+  saveSettings();
+  updateDashboardStats();
+  toast('Model settings saved!', 'success');
+}
+
+function saveVoiceSetting() {
+  state.settings.voice = document.getElementById('settings-voice')?.value || 'ryan';
+  saveSettings();
+}
+
+function saveVoiceSettings() {
+  state.settings.voice = document.getElementById('settings-voice')?.value || 'ryan';
+  state.settings.speed = parseFloat(document.getElementById('settings-speed')?.value || 1.0);
+  saveSettings();
+  toast('Voice settings saved!', 'success');
+}
+
+function updateSpeedDisplay(val) {
+  const el = document.getElementById('speed-val');
+  if (el) el.textContent = parseFloat(val).toFixed(1) + '×';
+}
+
+function setCount(n) {
+  state.settings.sentenceCount = n;
+  saveSettings();
+  document.querySelectorAll('.count-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.count) === n);
+  });
+}
+
+function populateSettings() {
+  const si = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  si('settings-key-gemini',    state.keys.gemini);
+  si('settings-key-anthropic', state.keys.anthropic);
+  si('settings-key-openai',    state.keys.openai);
+  si('settings-key-azure',     state.keys.azureTts);
+  si('settings-azure-region',  state.keys.azureRegion || 'centralindia');
+
+  const spEl = document.getElementById('settings-sentence-provider');
+  const cpEl = document.getElementById('settings-conv-provider');
+  if (spEl) spEl.value = state.settings.sentenceProvider;
+  if (cpEl) cpEl.value = state.settings.convProvider;
+  updateModelDropdown('sentence');
+  updateModelDropdown('conv');
+
+  // Level
+  document.querySelectorAll('.level-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.level === state.settings.level);
+    const radio = el.querySelector('input[type="radio"]');
+    if (radio) radio.checked = el.dataset.level === state.settings.level;
+  });
+
+  // Count
+  document.querySelectorAll('.count-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.count) === state.settings.sentenceCount);
+  });
+
+  // Voice & Speed
+  si('settings-voice', state.settings.voice);
+  const speedEl = document.getElementById('settings-speed');
+  if (speedEl) speedEl.value = state.settings.speed;
+  updateSpeedDisplay(state.settings.speed);
+
+  // Pricing table
+  renderPricingTable();
+  updateStorageDisplay();
+}
+
+function renderPricingTable() {
+  const tbody = document.getElementById('pricing-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = Object.entries(PRICING).map(([id, p]) => `
+    <tr>
+      <td>${id.replace('gemini-', 'Gemini ').replace('claude-', 'Claude ').replace('gpt-', 'GPT-')}</td>
+      <td>$${p.input}</td>
+      <td>$${p.output}</td>
+      <td>${p.free ? '<span class="free-badge">Free tier</span>' : '–'}</td>
+    </tr>
+  `).join('');
+}
+
+function updateStorageDisplay() {
+  const bytes    = getStorageUsage();
+  const kb       = (bytes / 1024).toFixed(1);
+  const mb       = (bytes / 1024 / 1024).toFixed(2);
+  const pct      = Math.min(100, (bytes / (5 * 1024 * 1024)) * 100);
+  const textEl   = document.getElementById('storage-text');
+  const barEl    = document.getElementById('storage-bar-fill');
+  const warnEl   = document.getElementById('storage-warn');
+  if (textEl)    textEl.textContent = `Storage used: ${kb} KB (${mb} MB / ~5 MB)`;
+  if (barEl) {
+    barEl.style.width = pct + '%';
+    barEl.classList.toggle('warn', pct > 80);
+  }
+  if (warnEl)    warnEl.style.display = pct > 80 ? '' : 'none';
+}
+
+function clearOldData() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  let cleared = 0;
+  for (const date of Object.keys(state.data.conversations)) {
+    if (date < cutoffStr) {
+      delete state.data.conversations[date];
+      cleared++;
+    }
+  }
+  saveData();
+  updateStorageDisplay();
+  toast(`Cleared data from ${cleared} day(s) older than 30 days.`, 'success');
+}
+
+// ============================================================
+// 14. UTILITY FUNCTIONS
+// ============================================================
+function parseJSON(text) {
+  const clean = text
+    .replace(/^```json\n?/i, '')
+    .replace(/^```\n?/i, '')
+    .replace(/```$/m, '')
+    .trim();
+  return JSON.parse(clean);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeJs(str) {
+  if (!str) return '';
+  return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+}
+
+function csvEsc(str) {
+  if (!str) return '';
+  const s = String(str).replace(/"/g, '""');
+  return `"${s}"`;
+}
+
+function capitalise(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+}
+
+function formatDuration(seconds) {
+  if (seconds < 60)  return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds/60)}m ${seconds%60}s`;
+  return `${Math.floor(seconds/3600)}h ${Math.floor((seconds%3600)/60)}m`;
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// 15. TOAST NOTIFICATIONS
+// ============================================================
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const div = document.createElement('div');
+  div.className = `toast toast-${type}`;
+  const icons = { info: 'ℹ️', success: '✅', error: '❌', warning: '⚠️' };
+  div.innerHTML = `<span>${icons[type] || ''}</span><span>${escapeHtml(msg)}</span>`;
+  container.appendChild(div);
+
+  setTimeout(() => {
+    div.classList.add('fadeout');
+    setTimeout(() => { if (div.parentNode) div.parentNode.removeChild(div); }, 300);
+  }, 3500);
+}
+
+// ============================================================
+// 16. UI ROUTING
+// ============================================================
+function showScreen(name) {
+  const prev = state.screen;
+
+  // Stop listening/speaking when leaving conversation
+  if (prev === 'conversation' && name !== 'conversation') {
+    stopListening();
+    stopSpeaking();
+  }
+
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+  // Show target
+  const target = document.getElementById(`screen-${name}`);
+  if (target) target.classList.add('active');
+
+  // Bottom nav
+  const nav = document.getElementById('bottom-nav');
+  if (name === 'setup') {
+    nav.classList.add('hidden');
+  } else {
+    nav.classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.screen === name);
+    });
+  }
+
+  state.screen = name;
+
+  // Screen-specific init
+  if (name === 'dashboard') updateDashboardStats();
+  if (name === 'sentences') renderSentences();
+  if (name === 'conversation') initConversationScreen();
+  if (name === 'history') renderHistory();
+  if (name === 'settings') populateSettings();
+
+  window.scrollTo(0, 0);
+}
+
+// ============================================================
+// 17. SETUP SCREEN LOGIC
+// ============================================================
+function initSetupTabs() {
+  document.querySelectorAll('.provider-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.provider-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.provider-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panel = document.getElementById('tab-' + tab.dataset.tab);
+      if (panel) panel.classList.add('active');
+    });
+  });
+}
+
+function initLevelOptions() {
+  document.querySelectorAll('.level-option').forEach(el => {
+    el.addEventListener('click', () => {
+      const level = el.dataset.level;
+      state.settings.level = level;
+      saveSettings();
+      document.querySelectorAll('.level-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      const radio = el.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+    });
+  });
+}
+
+document.getElementById('btn-save-setup').addEventListener('click', () => {
+  const geminiKey   = document.getElementById('key-gemini').value.trim();
+  const anthropicKey= document.getElementById('key-anthropic').value.trim();
+  const openaiKey   = document.getElementById('key-openai').value.trim();
+  const azureKey    = document.getElementById('key-azure').value.trim();
+  const azureRegion = document.getElementById('azure-region').value.trim() || 'centralindia';
+
+  if (!geminiKey && !anthropicKey && !openaiKey) {
+    toast('Please enter at least one API key to continue.', 'error');
+    return;
+  }
+
+  state.keys.gemini      = geminiKey;
+  state.keys.anthropic   = anthropicKey;
+  state.keys.openai      = openaiKey;
+  state.keys.azureTts    = azureKey;
+  state.keys.azureRegion = azureRegion;
+  saveKeys();
+
+  // Set default provider based on which key was entered
+  if (geminiKey) {
+    state.settings.sentenceProvider = 'gemini';
+    state.settings.convProvider     = 'gemini';
+  } else if (anthropicKey) {
+    state.settings.sentenceProvider = 'anthropic';
+    state.settings.sentenceModel    = 'claude-sonnet-4-6';
+    state.settings.convProvider     = 'anthropic';
+    state.settings.convModel        = 'claude-sonnet-4-6';
+  } else if (openaiKey) {
+    state.settings.sentenceProvider = 'openai';
+    state.settings.sentenceModel    = 'gpt-5-mini';
+    state.settings.convProvider     = 'openai';
+    state.settings.convModel        = 'gpt-5-mini';
+  }
+  saveSettings();
+
+  toast('Keys saved! Welcome to British English Coach.', 'success');
+  showScreen('dashboard');
+});
+
+document.getElementById('btn-backup-header').addEventListener('click', backupData);
+
+document.getElementById('btn-regen-sentences').addEventListener('click', () => {
+  if (confirm('This will replace today\'s sentences with newly generated ones. Continue?')) {
+    generateSentences(true);
+  }
+});
+
+document.getElementById('btn-gen-sentences').addEventListener('click', () => {
+  generateSentences();
+});
+
+// Load voices for Web Speech API
+if (window.speechSynthesis) {
+  speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => { speechSynthesis.getVoices(); };
+}
+
+// ============================================================
+// 18. INIT
+// ============================================================
+function init() {
+  loadAll();
+  initSetupTabs();
+  initLevelOptions();
+
+  // Check if we have a key already
+  if (state.keys.gemini || state.keys.anthropic || state.keys.openai) {
+    // Pre-fill setup screen inputs just in case
+    if (state.keys.gemini)     document.getElementById('key-gemini').value     = state.keys.gemini;
+    if (state.keys.anthropic)  document.getElementById('key-anthropic').value  = state.keys.anthropic;
+    if (state.keys.openai)     document.getElementById('key-openai').value     = state.keys.openai;
+    if (state.keys.azureTts)   document.getElementById('key-azure').value      = state.keys.azureTts;
+    if (state.keys.azureRegion) document.getElementById('azure-region').value  = state.keys.azureRegion;
+    showScreen('dashboard');
+  } else {
+    showScreen('setup');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
