@@ -2701,15 +2701,20 @@ function showHistoryDay(date) {
                   <div style="font-size:0.88rem;">${escapeHtml(e.text)}</div>
                 </div>`;
               // User turn — find matching correction
+              const normalize = s => (s || '').toLowerCase().replace(/[.,!?;:'"]/g, '').trim();
               const mistake = (c.review?.mistakes || []).find(m =>
-                m.what_user_said && e.text && m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
+                m.what_user_said && e.text && (
+                  normalize(m.what_user_said).slice(0, 40) === normalize(e.text).slice(0, 40) ||
+                  normalize(e.text).includes(normalize(m.what_user_said).slice(0, 20))
+                )
               );
               return `
                 <div class="transcript-item user-turn">
                   <div class="ti-role">You</div>
                   ${mistake
                     ? `<div style="font-size:0.88rem;color:#c62828;">✗ ${escapeHtml(e.text)}</div>
-                       <div style="font-size:0.88rem;color:#2d7a2d;margin-top:4px;">✓ ${diffHighlight(e.text, mistake.correction)}</div>`
+                       <div style="font-size:0.88rem;color:#2d7a2d;margin-top:4px;">✓ ${diffHighlight(e.text, mistake.correction)}</div>
+                       ${mistake.explanation ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px;font-style:italic;">💡 ${escapeHtml(mistake.explanation)}</div>` : ''}`
                     : `<div style="font-size:0.88rem;color:#2d7a2d;">✓ ${escapeHtml(e.text)}</div>`
                   }
                 </div>`;
