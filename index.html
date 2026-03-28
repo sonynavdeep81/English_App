@@ -2762,8 +2762,8 @@ function buildDiffHtml(original, corrected) {
   return corrected.split(/\s+/).map(word => {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
-      return `<font color="#2d7a2d" size="3">${escapeHtml(word)}</font>`;
-    return `<b><font color="#2d7a2d" size="4">${escapeHtml(word)}</font></b>`;
+      return `<span style="color:#2d7a2d;font-size:12pt;">${escapeHtml(word)}</span>`;
+    return `<span style="color:#2d7a2d;font-size:14pt;font-weight:bold;">${escapeHtml(word)}</span>`;
   }).join(' ');
 }
 
@@ -2774,7 +2774,7 @@ function buildWhyHtml(mistake) {
   if (changes) lines.push(`• Changed: ${escapeHtml(changes)}`);
   if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
   if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
-  return lines.join('&#10;&#10;');
+  return lines.join('<br><br>');
 }
 
 async function copyColoredTable(date, idx) {
@@ -2797,8 +2797,8 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const wrongHtml  = mistake ? `<font color="#c62828" size="3">${escapeHtml(e.text)}</font>` : `<font size="3">${escapeHtml(e.text)}</font>`;
-    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<font color="#2d7a2d" size="3">${escapeHtml(e.text)}</font>`;
+    const wrongHtml  = mistake ? `<span style="color:#c62828;font-size:12pt;">${escapeHtml(e.text)}</span>` : `<span style="font-size:12pt;">${escapeHtml(e.text)}</span>`;
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;font-size:12pt;">${escapeHtml(e.text)}</span>`;
     convRows += `<tr>
       ${td(sno++)}
       ${td(wrongHtml)}
@@ -2818,54 +2818,61 @@ async function copyColoredTable(date, idx) {
     </tr>`;
   });
 
-  // <google-sheets-html-origin> tells Sheets this HTML is from Sheets itself,
-  // so it preserves inline span color/background-color styles on paste.
-  const html = `<meta charset='utf-8'><google-sheets-html-origin>
-    <p style="font-family:Arial;font-size:13px;font-weight:bold;">Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</p>
+  const html = `
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;font-weight:normal;"><thead><tr>
       ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>
-    ${sentRows ? `
-    <br><p style="font-family:Arial;font-size:13px;font-weight:bold;">Today's Sentences</p>
-    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;"><thead><tr>
-      ${th('#')}${th("Sentence")}${th("Situation")}${th("Vocabulary")}
-    </tr></thead><tbody>${sentRows}</tbody></table>` : ''}
   `;
 
-  try {
-    await navigator.clipboard.write([
-      new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) })
-    ]);
+  if (copyRenderedHtml(html)) {
     toast('✅ Copied! Now paste into Google Sheets with Ctrl+V', 'success', 5000);
-  } catch(e) {
+  } else {
     toast('Copy failed — use Chrome on desktop for this feature.', 'error');
   }
 }
 
-async function copySentencesToSheets(date) {
+// Copies HTML by rendering it into a hidden DOM element and using
+// execCommand('copy'). This produces the same clipboard format as
+// manually selecting styled text on a webpage, so Google Sheets
+// preserves bold, font-size, and color on paste.
+function copyRenderedHtml(html) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  const ok = document.execCommand('copy');
+  sel.removeAllRanges();
+  document.body.removeChild(el);
+  return ok;
+}
+
+function copySentencesToSheets(date) {
   const sents = state.data.sentences[date] || [];
   if (!sents.length) { toast('No sentences for this date.', 'warning'); return; }
   const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
   const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
   let rows = '';
   sents.forEach((s, i) => {
-    const vocab = (s.vocabulary || []).map(v => `<font size="3"><b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}</font>`).join('&#10;');
+    const vocab = (s.vocabulary || []).map(v => `<span style="font-size:12pt;"><b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}</span>`).join('<br>');
     rows += `<tr>
       ${td(i+1)}
-      ${td(`<font size="3">${escapeHtml(s.sentence)}</font>`)}
-      ${td(`<font size="3" color="#555555">${escapeHtml(s.situation || '')}</font>`)}
-      ${td(vocab || '—', 'white-space:pre-wrap;')}
+      ${td(`<span style="font-size:12pt;font-weight:normal;">${escapeHtml(s.sentence)}</span>`)}
+      ${td(`<span style="font-size:12pt;font-weight:normal;color:#555;">${escapeHtml(s.situation || '')}</span>`)}
+      ${td(vocab || '—')}
     </tr>`;
   });
-  const html = `<meta charset='utf-8'><google-sheets-html-origin>
-    <p style="font-family:Arial;font-size:13px;font-weight:bold;">Today's Sentences — ${escapeHtml(date)}</p>
-    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
+  const html = `
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;font-weight:normal;"><thead><tr>
       ${th('#')}${th('Sentence')}${th('Situation')}${th('Vocabulary')}
     </tr></thead><tbody>${rows}</tbody></table>`;
-  try {
-    await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'})})]);
+  if (copyRenderedHtml(html)) {
     toast('✅ Copied! Paste into Google Sheets with Ctrl+V', 'success', 5000);
-  } catch(e) {
+  } else {
     toast('Copy failed — use Chrome on desktop.', 'error');
   }
 }
