@@ -2868,23 +2868,38 @@ async function copyColoredTable(date, idx) {
   const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
   let convRows = '';
   let sno = 1;
+  const norm = s => (s || '').toLowerCase().replace(/[.,!?;:'"]/g, '').trim();
   for (let i = 0; i < exchanges.length; i++) {
     const e = exchanges[i];
     if (e.role !== 'user') continue;
-    const mistake = mistakes.find(m =>
-      m.what_user_said && e.text &&
-      m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
+    const turnMistakes = mistakes.filter(m =>
+      m.what_user_said && e.text && (
+        norm(m.what_user_said).slice(0, 40) === norm(e.text).slice(0, 40) ||
+        norm(e.text).includes(norm(m.what_user_said).slice(0, 20))
+      )
     );
-    const wrongHtml   = mistake ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
-    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
-    const changedWords = mistake ? getChangedWords(e.text, mistake.correction) : '';
-    convRows += `<tr>
-      ${td(sno++)}
-      ${td(wrongHtml)}
-      ${td(correctHtml)}
-      ${td(escapeHtml(changedWords), changedWords ? 'color:#e65100;' : '')}
-      ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
-    </tr>`;
+    if (turnMistakes.length > 0) {
+      const wrongHtml = `<span style="color:#c62828;">${escapeHtml(e.text)}</span>`;
+      turnMistakes.forEach(mistake => {
+        const correctHtml  = buildDiffHtml(e.text, mistake.correction);
+        const changedWords = getChangedWords(e.text, mistake.correction);
+        convRows += `<tr>
+          ${td(sno++)}
+          ${td(wrongHtml)}
+          ${td(correctHtml)}
+          ${td(escapeHtml(changedWords), changedWords ? 'color:#e65100;' : '')}
+          ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
+        </tr>`;
+      });
+    } else {
+      convRows += `<tr>
+        ${td(sno++)}
+        ${td(escapeHtml(e.text))}
+        ${td(`<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`)}
+        ${td('')}
+        ${td('')}
+      </tr>`;
+    }
   }
   const html = `<meta charset='utf-8'><google-sheets-html-origin>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
