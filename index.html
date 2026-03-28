@@ -2469,7 +2469,7 @@ Provide your analysis in this exact JSON format and nothing else (no markdown, n
 {"overall_rating":"7","overall_feedback":"...","mistakes":[{"what_user_said":"...","issue":"grammar/vocabulary/collocation/phrasing","correction":"the natural British English way to say it","explanation":"...","ai_question":"...","is_collocation":false,"collocation_note":""}],"well_done":["..."],"sentences_used":[{"user_said":"exactly what the learner said","target":"the correct target sentence","used_correctly":true}],"sentences_missed":[{"target":"the target sentence they didn't use"}],"tips_for_tomorrow":"..."}
 
 Rules:
-- "correction" must always be the complete, natural British English version of what the learner said — never partial
+- "correction" must always be the complete, natural British English version of what the learner said — never partial. Rewrite it as a fluent native speaker would actually say it in casual conversation, not just fixing the minimum. Use contractions, natural word order, and idiomatic British phrasing. It should sound like something you would genuinely hear from a British person, not textbook English.
 - "is_collocation": set to true if the error involves words that must always go together as a fixed phrase (e.g. "do exercise" not "go for exercise", "make a decision" not "take a decision")
 - "collocation_note": if is_collocation is true, write the fixed phrase to remember (e.g. "do exercise / do some exercise")
 - "sentences_used": for each target sentence the learner attempted, include what they actually said AND the correct target sentence
