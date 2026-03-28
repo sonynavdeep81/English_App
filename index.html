@@ -2703,7 +2703,7 @@ function showHistoryDay(date) {
   if (sents.length > 0) {
     html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">
       <h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:0;">Today's Sentences</h3>
-      <button class="btn btn-secondary btn-sm" onclick="exportSentencesCSV('${date}')">📥 Export Sentences</button>
+      <button class="btn btn-primary btn-sm" onclick="copySentencesToSheets('${date}')">📋 Copy to Google Sheets</button>
     </div>`;
     html += sents.map((s, i) => `
       <div style="background:var(--warm-gray-1);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
@@ -2762,8 +2762,8 @@ function buildDiffHtml(original, corrected) {
   return corrected.split(/\s+/).map(word => {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
-      return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
-    return `<span style="color:#2d7a2d;font-size:14pt;">${escapeHtml(word)}</span>`;
+      return `<span style="color:#2d7a2d;font-size:12pt;">${escapeHtml(word)}</span>`;
+    return `<span style="color:#2d7a2d;font-size:14pt;font-weight:bold;">${escapeHtml(word)}</span>`;
   }).join(' ');
 }
 
@@ -2797,7 +2797,7 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const wrongHtml  = mistake ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
+    const wrongHtml  = mistake ? `<span style="color:#c62828;font-size:12pt;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
     const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
     convRows += `<tr>
       ${td(sno++)}
@@ -2840,6 +2840,34 @@ async function copyColoredTable(date, idx) {
     toast('✅ Copied! Now paste into Google Sheets with Ctrl+V', 'success', 5000);
   } catch(e) {
     toast('Copy failed — use Chrome on desktop for this feature.', 'error');
+  }
+}
+
+async function copySentencesToSheets(date) {
+  const sents = state.data.sentences[date] || [];
+  if (!sents.length) { toast('No sentences for this date.', 'warning'); return; }
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
+  let rows = '';
+  sents.forEach((s, i) => {
+    const vocab = (s.vocabulary || []).map(v => `<b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}`).join('&#10;');
+    rows += `<tr>
+      ${td(i+1)}
+      ${td(`<span style="font-size:12pt;">${escapeHtml(s.sentence)}</span>`)}
+      ${td(escapeHtml(s.situation || ''), 'color:#555;font-size:12pt;')}
+      ${td(vocab || '—', 'white-space:pre-wrap;')}
+    </tr>`;
+  });
+  const html = `<meta charset='utf-8'><google-sheets-html-origin>
+    <p style="font-family:Arial;font-size:13px;font-weight:bold;">Today's Sentences — ${escapeHtml(date)}</p>
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
+      ${th('#')}${th('Sentence')}${th('Situation')}${th('Vocabulary')}
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'})})]);
+    toast('✅ Copied! Paste into Google Sheets with Ctrl+V', 'success', 5000);
+  } catch(e) {
+    toast('Copy failed — use Chrome on desktop.', 'error');
   }
 }
 
