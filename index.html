@@ -2398,8 +2398,11 @@ async function generateReview() {
   const d = today();
   const todaySents = state.data.sentences[d] || [];
 
+  const userTurns = exchanges.filter(e => e.role === 'user');
+  if (userTurns.length === 0) throw new Error('No learner speech recorded to review.');
+
   const transcriptLines = exchanges.map(e =>
-    `${e.role === 'ai' ? 'Oliver/Emma' : 'Learner'}: ${e.text}`
+    `${e.role === 'ai' ? '[COACH - Oliver/Emma]' : '[LEARNER]'}: ${e.text}`
   ).join('\n');
 
   const sentList = todaySents.map(s => s.sentence).join('\n');
@@ -2407,14 +2410,16 @@ async function generateReview() {
 
   const systemPrompt = `You are a British English language coach reviewing a practice conversation.
 
+IMPORTANT: Only analyse and correct the [LEARNER] turns. The [COACH - Oliver/Emma] turns are spoken by a native British speaker — do NOT review or praise those. All feedback, corrections, and "well done" points must refer exclusively to what the [LEARNER] said.
+
 Learner level: ${LEVEL_DESCRIPTIONS[state.settings.level]}
 
-Full conversation transcript:
+Full conversation transcript (review ONLY the [LEARNER] lines):
 ${transcriptLines}
 
-${notesBlock ? `Observer notes from conversation: ${notesBlock}` : ''}
+${notesBlock ? `Observer notes: ${notesBlock}` : ''}
 
-${sentList ? `Today's target sentences:\n${sentList}` : ''}
+${sentList ? `Today's target sentences (check if Learner used any):\n${sentList}` : ''}
 
 Provide your analysis in this exact JSON format and nothing else (no markdown, no backticks, no preamble):
 {"overall_rating":"7","overall_feedback":"...","mistakes":[{"what_user_said":"...","issue":"...","correction":"...","explanation":"...","ai_question":"..."}],"well_done":["..."],"sentences_used":["..."],"sentences_missed":["..."],"tips_for_tomorrow":"..."}`;
