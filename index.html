@@ -1248,6 +1248,21 @@
         </div>
       </div>
 
+      <!-- Speech-to-Text -->
+      <div class="settings-section">
+        <h3>Speech-to-Text</h3>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">STT Engine</div>
+            <div class="setting-sub">Whisper requires an OpenAI API key</div>
+          </div>
+          <select id="settings-stt-provider" class="form-select" onchange="saveSttSetting()">
+            <option value="webspeech">Web Speech API (free)</option>
+            <option value="whisper">OpenAI Whisper (better accuracy)</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Voice & Speed -->
       <div class="settings-section">
         <h3>Voice & Speed</h3>
@@ -1413,6 +1428,7 @@ let state = {
     sentenceCount:    5,
     voice:            'ryan',
     speed:            1.0,
+    sttProvider:      'webspeech',
   },
   keys: {
     gemini: '', anthropic: '', openai: '',
@@ -3265,6 +3281,12 @@ function saveSettingsModels() {
   toast('Model settings saved!', 'success');
 }
 
+function saveSttSetting() {
+  state.settings.sttProvider = document.getElementById('settings-stt-provider')?.value || 'webspeech';
+  saveSettings();
+  toast('STT engine saved.', 'success');
+}
+
 function saveVoiceSetting() {
   state.settings.voice = document.getElementById('settings-voice')?.value || 'ryan';
   saveSettings();
@@ -3318,6 +3340,7 @@ function populateSettings() {
   });
 
   // Voice & Speed
+  si('settings-stt-provider', state.settings.sttProvider || 'webspeech');
   si('settings-voice', state.settings.voice);
   const speedEl = document.getElementById('settings-speed');
   if (speedEl) speedEl.value = state.settings.speed;
