@@ -2681,8 +2681,11 @@ function showHistoryDay(date) {
               return `
                 <div class="transcript-item user-turn">
                   <div class="ti-role">You</div>
-                  <div class="sent-pair-wrong" style="font-size:0.88rem;text-decoration:none;color:#c62828;">✗ ${escapeHtml(e.text)}</div>
-                  ${mistake ? `<div class="sent-pair-correct" style="font-size:0.88rem;margin-top:4px;">✓ ${diffHighlight(e.text, mistake.correction)}</div>` : ''}
+                  ${mistake
+                    ? `<div style="font-size:0.88rem;color:#c62828;">✗ ${escapeHtml(e.text)}</div>
+                       <div style="font-size:0.88rem;color:#2d7a2d;margin-top:4px;">✓ ${diffHighlight(e.text, mistake.correction)}</div>`
+                    : `<div style="font-size:0.88rem;color:#2d7a2d;">✓ ${escapeHtml(e.text)}</div>`
+                  }
                 </div>`;
             }).join('') : ''}
             ${c.review ? `
