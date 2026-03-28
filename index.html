@@ -982,7 +982,10 @@
           <h2 id="dashboard-date">Saturday, 28 March 2026</h2>
           <p id="dashboard-day-msg">Good morning! Ready to practise?</p>
         </div>
-        <div id="model-badge" class="model-badge">🟢 Gemini Flash</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+          <div id="model-badge" class="model-badge">🟢 Gemini Flash</div>
+          <div id="level-badge" class="model-badge" style="background:var(--purple-pale,#f3eeff);color:var(--purple,#7c3aed);">🌳 Adult</div>
+        </div>
       </div>
       <div class="stats-row">
         <div class="stat-card">
@@ -1651,6 +1654,7 @@ let currentUtterance = null;
 let ttsOnEndCallback = null;
 
 async function speak(text, onEnd) {
+  if (state.convEnded) return;
   stopSpeaking();
   ttsOnEndCallback = onEnd || null;
 
@@ -2223,6 +2227,12 @@ async function startConversation() {
   } catch(err) {
     hideTypingIndicator();
     handleLLMError(err, 'starting conversation');
+    // Reset back to topic selection so user can retry
+    state.session = null;
+    state.convEnded = true;
+    document.getElementById('chat-ui').classList.remove('active');
+    document.getElementById('topic-selection').style.display = '';
+    document.getElementById('btn-end-conv').style.display = 'none';
   }
 }
 
@@ -2408,6 +2418,14 @@ async function endConversation() {
     </div>
   `;
 
+  const userTurns = (state.session.exchanges || []).filter(e => e.role === 'user');
+  if (userTurns.length === 0) {
+    document.getElementById('score-label').textContent = '–';
+    document.getElementById('review-content').innerHTML = `<p style="padding:16px;color:var(--text-muted);text-align:center;">You didn't say anything this session. Tap the mic next time to get feedback!</p>`;
+    state.session = null;
+    return;
+  }
+
   try {
     const review = await generateReview();
     state.session.review = review;
@@ -2522,8 +2540,9 @@ function renderReview(review) {
   // Mark sentences used in conversation
   if (review.sentences_used && Array.isArray(review.sentences_used)) {
     review.sentences_used.forEach(used => {
+      const usedStr = typeof used === 'object' ? (used.target || used.user_said || '') : used;
       const idx = todaySents.findIndex(s =>
-        s.sentence.toLowerCase().includes(used.toLowerCase().slice(0, 20))
+        s.sentence.toLowerCase().includes(usedStr.toLowerCase().slice(0, 20))
       );
       if (idx >= 0) {
         state.data.sentences[d][idx].used_in_conversation = true;
@@ -3104,11 +3123,32 @@ function updateDashboardStats() {
   // Update model badge
   const badge = el('model-badge');
   if (badge) {
-    const model   = state.settings.convModel;
-    const pricing = PRICING[model];
-    const label   = model.includes('gemini') ? '🟢 ' + model.replace('gemini-','Gemini ') :
-                    model.includes('claude') ? '🟣 Claude' : '⚫ GPT';
-    badge.textContent = label + (pricing?.free ? ' (Free)' : '');
+    const provider = state.settings.convProvider;
+    const hasKey   = !!(provider === 'gemini'    ? state.keys.gemini :
+                        provider === 'anthropic' ? state.keys.anthropic :
+                        provider === 'openai'    ? state.keys.openai : '');
+    if (hasKey) {
+      const model   = state.settings.convModel;
+      const pricing = PRICING[model];
+      const label   = model.includes('gemini') ? '🟢 ' + model.replace('gemini-','Gemini ') :
+                      model.includes('claude') ? '🟣 Claude' : '⚫ GPT';
+      badge.textContent = label + (pricing?.free ? ' (Free)' : '');
+      badge.style.background = '';
+      badge.style.color = '';
+    } else {
+      badge.textContent = '⚠️ No API Key';
+      badge.style.background = 'var(--error-pale, #fff0f0)';
+      badge.style.color = 'var(--error, #c0392b)';
+    }
+  }
+
+  // Update level badge
+  const levelBadge = el('level-badge');
+  if (levelBadge) {
+    const icons = { young: '🌱', teen: '🌿', adult: '🌳' };
+    const names = { young: 'Young Learner', teen: 'Teenager', adult: 'Adult' };
+    const lvl = state.settings.level || 'adult';
+    levelBadge.textContent = (icons[lvl] || '🌳') + ' ' + (names[lvl] || 'Adult');
   }
 
   // Date display
@@ -3468,14 +3508,22 @@ function initSetupTabs() {
 
 function initLevelOptions() {
   document.querySelectorAll('.level-option').forEach(el => {
-    el.addEventListener('click', () => {
+    const radio = el.querySelector('input[type="radio"]');
+    if (!radio) return;
+    radio.addEventListener('change', () => {
       const level = el.dataset.level;
       state.settings.level = level;
       saveSettings();
+      toast('Learner level saved.', 'success');
+      const lb = document.getElementById('level-badge');
+      if (lb) {
+        const icons = { young: '🌱', teen: '🌿', adult: '🌳' };
+        const names = { young: 'Young Learner', teen: 'Teenager', adult: 'Adult' };
+        lb.textContent = (icons[level] || '🌳') + ' ' + (names[level] || 'Adult');
+      }
       document.querySelectorAll('.level-option').forEach(o => o.classList.remove('selected'));
       el.classList.add('selected');
-      const radio = el.querySelector('input[type="radio"]');
-      if (radio) radio.checked = true;
+      radio.checked = true;
     });
   });
 }
@@ -3492,10 +3540,10 @@ document.getElementById('btn-save-setup').addEventListener('click', () => {
     return;
   }
 
-  state.keys.gemini      = geminiKey;
-  state.keys.anthropic   = anthropicKey;
-  state.keys.openai      = openaiKey;
-  state.keys.azureTts    = azureKey;
+  if (geminiKey)    state.keys.gemini      = geminiKey;
+  if (anthropicKey) state.keys.anthropic   = anthropicKey;
+  if (openaiKey)    state.keys.openai      = openaiKey;
+  if (azureKey)     state.keys.azureTts    = azureKey;
   state.keys.azureRegion = azureRegion;
   saveKeys();
 
