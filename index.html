@@ -2764,8 +2764,8 @@ function buildDiffHtml(original, corrected) {
   return corrected.split(/\s+/).map(word => {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
-      return `<font color="#2d7a2d">${escapeHtml(word)}</font>`;
-    return `<b><font color="#e65100">${escapeHtml(word)}</font></b>`;
+      return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
+    return `<span style="color:#bf360c;font-weight:bold;background-color:#fff176;">${escapeHtml(word)}</span>`;
   }).join(' ');
 }
 
@@ -2789,13 +2789,13 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const changesText = mistake ? buildChangesText(e.text, mistake.correction) : '';
+    const wrongHtml  = mistake ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
     convRows += `<tr>
       ${td(sno++)}
       ${td(escapeHtml(aiQ))}
-      ${td(escapeHtml(e.text), mistake ? 'background:#fce8e6;' : '')}
-      ${td(mistake ? escapeHtml(mistake.correction) : escapeHtml(e.text), mistake ? 'background:#e6f4ea;' : '')}
-      ${td(changesText, 'background:#fff8e1;font-size:0.9em;')}
+      ${td(wrongHtml)}
+      ${td(correctHtml)}
       ${td(escapeHtml(mistake?.explanation || ''), 'color:#555;font-size:0.9em;')}
     </tr>`;
   }
@@ -2811,37 +2811,26 @@ async function copyColoredTable(date, idx) {
     </tr>`;
   });
 
-  const html = `
-    <p style="font-family:Arial;font-size:13px;font-weight:bold;">📋 Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</p>
+  // <google-sheets-html-origin> tells Sheets this HTML is from Sheets itself,
+  // so it preserves inline span color/background-color styles on paste.
+  const html = `<meta charset='utf-8'><google-sheets-html-origin>
+    <p style="font-family:Arial;font-size:13px;font-weight:bold;">Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</p>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;"><thead><tr>
-      ${th('#')}${th("Oliver's Question")}${th("What You Said (red)")}${th("Better Way (green)")}${th("Changes")}${th("Why")}
+      ${th('#')}${th("Oliver's Question")}${th("What You Said")}${th("Better Way")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>
     ${sentRows ? `
-    <br><p style="font-family:Arial;font-size:13px;font-weight:bold;">📚 Today's Sentences</p>
+    <br><p style="font-family:Arial;font-size:13px;font-weight:bold;">Today's Sentences</p>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;"><thead><tr>
       ${th('#')}${th("Sentence")}${th("Situation")}${th("Vocabulary")}
     </tr></thead><tbody>${sentRows}</tbody></table>` : ''}
   `;
 
-  // Use contenteditable + execCommand so browser packages HTML in a format
-  // Google Sheets recognises (ClipboardItem strips rich text formatting)
-  const el = document.createElement('div');
-  el.contentEditable = 'true';
-  el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
-  el.innerHTML = html;
-  document.body.appendChild(el);
-  el.focus();
-  const sel = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  sel.removeAllRanges();
-  sel.addRange(range);
-  const ok = document.execCommand('copy');
-  sel.removeAllRanges();
-  document.body.removeChild(el);
-  if (ok) {
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }) })
+    ]);
     toast('✅ Copied! Now paste into Google Sheets with Ctrl+V', 'success', 5000);
-  } else {
+  } catch(e) {
     toast('Copy failed — use Chrome on desktop for this feature.', 'error');
   }
 }
