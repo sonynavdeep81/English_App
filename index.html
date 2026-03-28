@@ -820,7 +820,7 @@
     @media (prefers-color-scheme: dark) { .free-badge { background: #0d2010; color: #7acf7a; } }
 
     /* ===== TOAST ===== */
-    #toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column-reverse; gap: 8px; pointer-events: none; width: calc(100% - 32px); max-width: 560px; }
+    #toast-container { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column-reverse; gap: 8px; pointer-events: none; width: calc(100% - 32px); max-width: 560px; }
     .toast {
       padding: 12px 16px;
       border-radius: var(--radius);
@@ -2420,7 +2420,7 @@ Provide your analysis in this exact JSON format and nothing else (no markdown, n
     state.settings.convModel,
     systemPrompt,
     [{ role: 'user', content: 'Please provide the review now.' }],
-    1024
+    2048
   );
 
   return parseJSON(result.text);
