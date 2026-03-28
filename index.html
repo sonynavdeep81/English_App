@@ -2763,7 +2763,7 @@ function buildDiffHtml(original, corrected) {
     const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (origWords.has(clean))
       return `<span style="color:#2d7a2d;">${escapeHtml(word)}</span>`;
-    return `<b><span style="color:#2d7a2d;">${escapeHtml(word)}</span></b>`;
+    return `<span style="color:#2d7a2d;font-weight:bold;">${escapeHtml(word)}</span>`;
   }).join(' ');
 }
 
@@ -2774,7 +2774,7 @@ function buildWhyHtml(mistake) {
   if (changes) lines.push(`• Changed: ${escapeHtml(changes)}`);
   if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
   if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
-  return lines.join('<br><br>');
+  return lines.join('<br>&nbsp;<br>');
 }
 
 async function copyColoredTable(date, idx) {
