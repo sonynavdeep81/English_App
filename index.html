@@ -2692,7 +2692,7 @@ function showHistoryDay(date) {
               </div>
             ` : ''}
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" onclick="downloadConvXls('${date}', ${ci})">📥 Download for Google Sheets</button>
+              <button class="btn btn-primary btn-sm" onclick="copyColoredTable('${date}', ${ci})">📋 Copy to Google Sheets</button>
             </div>
           </div>
         </div>
@@ -2703,7 +2703,7 @@ function showHistoryDay(date) {
   if (sents.length > 0) {
     html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">
       <h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:0;">Today's Sentences</h3>
-      <button class="btn btn-primary btn-sm" onclick="downloadSentencesXls('${date}')">📥 Download for Google Sheets</button>
+      <button class="btn btn-primary btn-sm" onclick="copySentencesToSheets('${date}')">📋 Copy to Google Sheets</button>
     </div>`;
     html += sents.map((s, i) => `
       <div style="background:var(--warm-gray-1);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
@@ -2777,30 +2777,13 @@ function buildWhyHtml(mistake) {
   return lines.join('<br><br>');
 }
 
-// Downloads an HTML table as .xls — Google Sheets/Excel opens it
-// with ALL formatting (bold, color, font-size) perfectly preserved.
-function downloadXls(html, filename) {
-  const xlsHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
-    xmlns:x="urn:schemas-microsoft-com:office:excel"
-    xmlns="http://www.w3.org/TR/REC-html40">
-    <head><meta charset="utf-8"></head><body>${html}</body></html>`;
-  const blob = new Blob([xlsHtml], { type: 'application/vnd.ms-excel' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function downloadConvXls(date, idx) {
+async function copyColoredTable(date, idx) {
   const conv  = state.data.conversations[date]?.[idx];
   if (!conv) return;
-
   const exchanges = conv.exchanges || [];
   const mistakes  = conv.review?.mistakes || [];
-  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-size:12pt;">${s}</th>`;
-  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-size:12pt;${extra}">${s}</td>`;
-
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
   let convRows = '';
   let sno = 1;
   for (let i = 0; i < exchanges.length; i++) {
@@ -2816,25 +2799,26 @@ function downloadConvXls(date, idx) {
       ${td(sno++)}
       ${td(wrongHtml)}
       ${td(correctHtml)}
-      ${td(buildWhyHtml(mistake))}
+      ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
     </tr>`;
   }
-
-  const html = `
-    <h3 style="font-family:Arial;font-size:13pt;">Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</h3>
-    <table style="border-collapse:collapse;font-family:Arial,sans-serif;"><thead><tr>
+  const html = `<meta charset='utf-8'><google-sheets-html-origin>
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
       ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>`;
-
-  downloadXls(html, `conversation-${date}-${idx+1}.xls`);
-  toast('✅ Downloaded! Open the .xls file in Google Sheets or upload to Google Drive.', 'success', 5000);
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'})})]);
+    toast('✅ Copied! Paste into Google Sheets with Ctrl+V', 'success', 5000);
+  } catch(e) {
+    toast('Copy failed — use Chrome on desktop.', 'error');
+  }
 }
 
-function downloadSentencesXls(date) {
+async function copySentencesToSheets(date) {
   const sents = state.data.sentences[date] || [];
   if (!sents.length) { toast('No sentences for this date.', 'warning'); return; }
-  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-size:12pt;">${s}</th>`;
-  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-size:12pt;font-weight:normal;${extra}">${s}</td>`;
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;${extra}">${s}</td>`;
   let rows = '';
   sents.forEach((s, i) => {
     const vocab = (s.vocabulary || []).map(v => `<b>${escapeHtml(v.word)}</b>: ${escapeHtml(v.meaning)}`).join('<br>');
@@ -2845,14 +2829,16 @@ function downloadSentencesXls(date) {
       ${td(vocab || '—')}
     </tr>`;
   });
-  const html = `
-    <h3 style="font-family:Arial;font-size:13pt;">Today's Sentences — ${escapeHtml(date)}</h3>
-    <table style="border-collapse:collapse;font-family:Arial,sans-serif;"><thead><tr>
+  const html = `<meta charset='utf-8'><google-sheets-html-origin>
+    <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
       ${th('#')}${th('Sentence')}${th('Situation')}${th('Vocabulary')}
     </tr></thead><tbody>${rows}</tbody></table>`;
-
-  downloadXls(html, `sentences-${date}.xls`);
-  toast('✅ Downloaded! Open the .xls file in Google Sheets or upload to Google Drive.', 'success', 5000);
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'})})]);
+    toast('✅ Copied! Paste into Google Sheets with Ctrl+V', 'success', 5000);
+  } catch(e) {
+    toast('Copy failed — use Chrome on desktop.', 'error');
+  }
 }
 
 function exportSentencesCSV(date) {
