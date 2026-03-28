@@ -2527,16 +2527,26 @@ function renderReview(review) {
     <div class="review-section">
       <h3>📝 Today's Sentences</h3>
       ${(review.sentences_used || []).map(s => {
-        const userSaid = typeof s === 'object' ? s.user_said : s;
+        const userSaid = typeof s === 'object' ? s.user_said : null;
         const target   = typeof s === 'object' ? s.target   : s;
         const correct  = typeof s === 'object' ? s.used_correctly !== false : true;
-        if (correct || userSaid === target) {
+        // Try to find a matching mistake if no explicit user_said
+        const matchedMistake = (!userSaid || userSaid === target) && Array.isArray(review.mistakes)
+          ? review.mistakes.find(m => {
+              const t = (target || '').toLowerCase();
+              const c = (m.correction || '').toLowerCase();
+              return c && t && (c.includes(t.slice(0,20)) || t.includes(c.slice(0,20)));
+            })
+          : null;
+        const displayWrong = userSaid && userSaid !== target ? userSaid
+          : matchedMistake ? matchedMistake.what_user_said : null;
+        if (!displayWrong || correct) {
           return `<div class="sent-pair-card sent-pair-ok">
             <div class="sent-pair-correct">✓ ${escapeHtml(target)}</div>
           </div>`;
         }
         return `<div class="sent-pair-card">
-          <div class="sent-pair-wrong">✗ You said: ${escapeHtml(userSaid)}</div>
+          <div class="sent-pair-wrong">✗ You said: ${escapeHtml(displayWrong)}</div>
           <div class="sent-pair-correct">✓ Better: ${escapeHtml(target)}</div>
         </div>`;
       }).join('')}
