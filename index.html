@@ -2758,6 +2758,16 @@ function buildChangesText(original, corrected) {
   return parts.join(', ');
 }
 
+function getChangedWords(original, corrected) {
+  const origWords = new Set(
+    original.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/)
+  );
+  return corrected.split(/\s+/).filter(word => {
+    const clean = word.toLowerCase().replace(/[.,!?;:'"]/g, '');
+    return !origWords.has(clean);
+  }).join(', ');
+}
+
 function buildDiffHtml(original, corrected) {
   const origWords = new Set(
     original.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/)
@@ -2834,18 +2844,20 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const wrongHtml  = mistake ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
+    const wrongHtml   = mistake ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
     const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
+    const changedWords = mistake ? getChangedWords(e.text, mistake.correction) : '';
     convRows += `<tr>
       ${td(sno++)}
       ${td(wrongHtml)}
       ${td(correctHtml)}
+      ${td(escapeHtml(changedWords), changedWords ? 'color:#e65100;' : '')}
       ${td(buildWhyHtml(mistake), 'white-space:pre-wrap;')}
     </tr>`;
   }
   const html = `<meta charset='utf-8'><google-sheets-html-origin>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12pt;"><thead><tr>
-      ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
+      ${th('#')}${th("What You Said")}${th("Better Way")}${th("Changed Words")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>`;
   try {
     await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type:'text/html'})})]);
