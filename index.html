@@ -2302,6 +2302,25 @@ async function sendUserTurn(text) {
     });
   } catch(err) {
     hideTypingIndicator();
+    if (err && err.type === 'rate_limit' && !state.convEnded) {
+      // Auto-retry after 15s for rate limit
+      toast('⏳ Rate limited — retrying in 15 seconds...', 'warning');
+      const statusEl = document.getElementById('mic-status');
+      if (statusEl) statusEl.textContent = 'Rate limited — retrying in 15s...';
+      let countdown = 15;
+      const iv = setInterval(() => {
+        countdown--;
+        if (statusEl) statusEl.textContent = `Rate limited — retrying in ${countdown}s...`;
+        if (countdown <= 0) { clearInterval(iv); }
+      }, 1000);
+      setTimeout(() => {
+        if (!state.convEnded && state.session) {
+          if (statusEl) statusEl.textContent = 'Retrying...';
+          sendUserTurn(text);
+        }
+      }, 15000);
+      return;
+    }
     handleLLMError(err, 'conversation');
     // Restart listening even on error
     setTimeout(() => {
