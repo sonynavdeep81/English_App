@@ -2696,6 +2696,7 @@ function showHistoryDay(date) {
             ` : ''}
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn btn-primary btn-sm" onclick="copyColoredTable('${date}', ${ci})">📋 Copy to Google Sheets</button>
+              <button class="btn btn-secondary btn-sm" onclick="downloadConvXls('${date}', ${ci})">📥 Download .xls (full colors)</button>
             </div>
           </div>
         </div>
@@ -2778,6 +2779,44 @@ function buildWhyHtml(mistake) {
   if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
   if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
   return lines.join('&#10;&#10;');
+}
+
+function buildConvTableHtml(conv, mistakes, exchanges) {
+  const th = s => `<th style="border:1px solid #ccc;padding:6px 10px;background:#1a535c;color:white;text-align:left;font-family:Arial;">${s}</th>`;
+  const td = (s, extra='') => `<td style="border:1px solid #ccc;padding:6px 10px;vertical-align:top;font-family:Arial;font-size:11pt;${extra}">${s}</td>`;
+  let rows = '';
+  let sno = 1;
+  for (let i = 0; i < exchanges.length; i++) {
+    const e = exchanges[i];
+    if (e.role !== 'user') continue;
+    const mistake = mistakes.find(m =>
+      m.what_user_said && e.text &&
+      m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
+    );
+    const wrongHtml  = mistake ? `<span style="color:#c62828;">${escapeHtml(e.text)}</span>` : escapeHtml(e.text);
+    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<span style="color:#2d7a2d;">${escapeHtml(e.text)}</span>`;
+    rows += `<tr>
+      ${td(sno++)}
+      ${td(wrongHtml)}
+      ${td(correctHtml)}
+      ${td(buildWhyHtml(mistake).replace(/&#10;/g,'<br>'), 'white-space:pre-wrap;')}
+    </tr>`;
+  }
+  return `<table style="border-collapse:collapse;font-family:Arial;font-size:11pt;"><thead><tr>
+    ${th('#')}${th("What You Said")}${th("Better Way")}${th("Why")}
+  </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function downloadConvXls(date, idx) {
+  const conv = state.data.conversations[date]?.[idx];
+  if (!conv) return;
+  const tableHtml = buildConvTableHtml(conv, conv.review?.mistakes||[], conv.exchanges||[]);
+  const xls = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>${tableHtml}</body></html>`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([xls], {type:'application/vnd.ms-excel'}));
+  a.download = `conversation-${date}-${idx+1}.xls`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('✅ Downloaded! Open in Google Sheets — all colors preserved.', 'success', 5000);
 }
 
 async function copyColoredTable(date, idx) {
