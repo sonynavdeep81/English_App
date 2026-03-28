@@ -2774,7 +2774,7 @@ function buildWhyHtml(mistake) {
   if (changes) lines.push(`• Changed: ${escapeHtml(changes)}`);
   if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
   if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
-  return lines.join('<br>&nbsp;<br>');
+  return lines.join('&#10;&#10;');
 }
 
 async function copyColoredTable(date, idx) {
