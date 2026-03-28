@@ -2744,6 +2744,19 @@ function showHistoryList() {
 }
 
 // Build inline-styled diff HTML for Google Sheets paste
+function buildChangesText(original, corrected) {
+  const origWords = original.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/);
+  const corrWords = corrected.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/);
+  const origSet = new Set(origWords);
+  const corrSet = new Set(corrWords);
+  const added   = corrWords.filter(w => !origSet.has(w));
+  const removed = origWords.filter(w => !corrSet.has(w));
+  const parts = [];
+  removed.forEach((w, i) => parts.push(`"${w}" → "${added[i] || '(removed)'}"`));
+  added.slice(removed.length).forEach(w => parts.push(`+ "${w}"`));
+  return parts.join(', ');
+}
+
 function buildDiffHtml(original, corrected) {
   const origWords = new Set(
     original.toLowerCase().replace(/[.,!?;:'"]/g, '').split(/\s+/)
@@ -2776,12 +2789,13 @@ async function copyColoredTable(date, idx) {
       m.what_user_said && e.text &&
       m.what_user_said.toLowerCase().slice(0,30) === e.text.toLowerCase().slice(0,30)
     );
-    const correctHtml = mistake ? buildDiffHtml(e.text, mistake.correction) : `<font color="#2d7a2d">${escapeHtml(e.text)}</font>`;
+    const changesText = mistake ? buildChangesText(e.text, mistake.correction) : '';
     convRows += `<tr>
       ${td(sno++)}
       ${td(escapeHtml(aiQ))}
-      ${td(escapeHtml(e.text), 'color:#c62828;')}
-      ${td(correctHtml)}
+      ${td(escapeHtml(e.text), mistake ? 'background:#fce8e6;' : '')}
+      ${td(mistake ? escapeHtml(mistake.correction) : escapeHtml(e.text), mistake ? 'background:#e6f4ea;' : '')}
+      ${td(changesText, 'background:#fff8e1;font-size:0.9em;')}
       ${td(escapeHtml(mistake?.explanation || ''), 'color:#555;font-size:0.9em;')}
     </tr>`;
   }
@@ -2800,7 +2814,7 @@ async function copyColoredTable(date, idx) {
   const html = `
     <p style="font-family:Arial;font-size:13px;font-weight:bold;">📋 Conversation — ${escapeHtml(conv.topic||'')} · ${escapeHtml(conv.timestamp?.slice(0,10)||date)}</p>
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;"><thead><tr>
-      ${th('#')}${th("Oliver's Question")}${th("What You Said")}${th("Better Way (changed words highlighted)")}${th("Why")}
+      ${th('#')}${th("Oliver's Question")}${th("What You Said (red)")}${th("Better Way (green)")}${th("Changes")}${th("Why")}
     </tr></thead><tbody>${convRows}</tbody></table>
     ${sentRows ? `
     <br><p style="font-family:Arial;font-size:13px;font-weight:bold;">📚 Today's Sentences</p>
