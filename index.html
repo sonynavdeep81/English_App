@@ -685,6 +685,11 @@
     .mistake-correction { color: #2d7a2d; font-weight: 500; }
     .diff-added { color: #1a535c; font-weight: 700; background: #e0f4f4; border-radius: 3px; padding: 0 2px; }
     .collocation-badge { display: inline-block; background: #fff3e0; color: #e65100; font-size: 0.75rem; font-weight: 600; border-radius: 4px; padding: 2px 6px; }
+    .sent-pair-card { background: var(--warm-white); border: 1px solid var(--warm-gray-2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .sent-pair-ok { border-left: 3px solid #2d7a2d; }
+    .sent-pair-missed { border-left: 3px solid var(--coral); background: #fff5f5; }
+    .sent-pair-wrong { color: #c62828; font-size: 0.88rem; text-decoration: line-through; }
+    .sent-pair-correct { color: #2d7a2d; font-size: 0.9rem; font-weight: 500; }
 
     .tip-box { background: linear-gradient(135deg, var(--teal-pale), #f0f9fa); border: 1px solid var(--teal); border-radius: var(--radius); padding: 14px 16px; }
     .tip-box p { font-size: 0.9rem; color: var(--text-secondary); }
@@ -2424,12 +2429,14 @@ ${notesBlock ? `Observer notes: ${notesBlock}` : ''}
 ${sentList ? `Today's target sentences (check if Learner used any):\n${sentList}` : ''}
 
 Provide your analysis in this exact JSON format and nothing else (no markdown, no backticks, no preamble):
-{"overall_rating":"7","overall_feedback":"...","mistakes":[{"what_user_said":"...","issue":"grammar/vocabulary/collocation/phrasing","correction":"the natural British English way to say it","explanation":"...","ai_question":"...","is_collocation":false,"collocation_note":""}],"well_done":["..."],"sentences_used":["..."],"sentences_missed":["..."],"tips_for_tomorrow":"..."}
+{"overall_rating":"7","overall_feedback":"...","mistakes":[{"what_user_said":"...","issue":"grammar/vocabulary/collocation/phrasing","correction":"the natural British English way to say it","explanation":"...","ai_question":"...","is_collocation":false,"collocation_note":""}],"well_done":["..."],"sentences_used":[{"user_said":"exactly what the learner said","target":"the correct target sentence","used_correctly":true}],"sentences_missed":[{"target":"the target sentence they didn't use"}],"tips_for_tomorrow":"..."}
 
-For each mistake:
+Rules:
 - "correction" must always be the complete, natural British English version of what the learner said — never partial
 - "is_collocation": set to true if the error involves words that must always go together as a fixed phrase (e.g. "do exercise" not "go for exercise", "make a decision" not "take a decision")
-- "collocation_note": if is_collocation is true, write the fixed phrase to remember (e.g. "do exercise / do some exercise")`;
+- "collocation_note": if is_collocation is true, write the fixed phrase to remember (e.g. "do exercise / do some exercise")
+- "sentences_used": for each target sentence the learner attempted, include what they actually said AND the correct target sentence
+- "sentences_missed": list target sentences the learner never attempted`;
 
   const result = await callLLM(
     state.settings.convProvider,
@@ -2514,10 +2521,27 @@ function renderReview(review) {
   const sentencesHtml = (review.sentences_used?.length > 0 || review.sentences_missed?.length > 0) ? `
     <div class="review-section">
       <h3>📝 Today's Sentences</h3>
-      <div class="sentences-used-chips">
-        ${(review.sentences_used || []).map(s => `<span class="chip used">✓ ${escapeHtml(s)}</span>`).join('')}
-        ${(review.sentences_missed || []).map(s => `<span class="chip missed">✗ ${escapeHtml(s)}</span>`).join('')}
-      </div>
+      ${(review.sentences_used || []).map(s => {
+        const userSaid = typeof s === 'object' ? s.user_said : s;
+        const target   = typeof s === 'object' ? s.target   : s;
+        const correct  = typeof s === 'object' ? s.used_correctly !== false : true;
+        if (correct || userSaid === target) {
+          return `<div class="sent-pair-card sent-pair-ok">
+            <div class="sent-pair-correct">✓ ${escapeHtml(target)}</div>
+          </div>`;
+        }
+        return `<div class="sent-pair-card">
+          <div class="sent-pair-wrong">✗ You said: ${escapeHtml(userSaid)}</div>
+          <div class="sent-pair-correct">✓ Better: ${escapeHtml(target)}</div>
+        </div>`;
+      }).join('')}
+      ${(review.sentences_missed || []).map(s => {
+        const target = typeof s === 'object' ? s.target : s;
+        return `<div class="sent-pair-card sent-pair-missed">
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px;">NOT USED — practice this:</div>
+          <div class="sent-pair-correct">📌 ${escapeHtml(target)}</div>
+        </div>`;
+      }).join('')}
     </div>
   ` : '';
 
