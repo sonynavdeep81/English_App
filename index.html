@@ -3014,7 +3014,8 @@ function updateModelDropdown(type) {
 
   modelEl.innerHTML = models.map(m => {
     const p = PRICING[m.id];
-    const costLabel = p?.free ? '~₹0/hr (free tier)' : `~₹${((p?.input || 0) * 0.5 * INR_RATE / 1000).toFixed(0)}/hr`;
+    // Estimate ~50K input + 20K output tokens per hour; PRICING is per million tokens
+    const costLabel = p?.free ? '~₹0/hr (free tier)' : `~₹${(((p?.input||0)*50 + (p?.output||0)*20) * INR_RATE / 1000).toFixed(0)}/hr`;
     return `<option value="${m.id}" ${m.id === current ? 'selected' : ''}>${m.label} — ${costLabel}</option>`;
   }).join('');
 }
