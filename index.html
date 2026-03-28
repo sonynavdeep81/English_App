@@ -2809,9 +2809,7 @@ function buildDiffHtml(original, corrected) {
 function buildWhyHtml(mistake) {
   if (!mistake) return '';
   const lines = [];
-  const changes = buildChangesText(mistake.what_user_said || '', mistake.correction || '');
-  if (changes) lines.push(`• Changed: ${escapeHtml(changes)}`);
-  if (mistake.explanation) lines.push(`• Why: ${escapeHtml(mistake.explanation)}`);
+  if (mistake.explanation) lines.push(`• ${escapeHtml(mistake.explanation)}`);
   if (mistake.collocation) lines.push(`• Collocation: ${escapeHtml(mistake.collocation)}`);
   return lines.join('&#10;&#10;');
 }
