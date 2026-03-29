@@ -2835,7 +2835,10 @@ function renderHistory() {
   document.getElementById('history-list-view').style.display = '';
   document.getElementById('history-day-view').classList.remove('active');
 
-  const dates = Object.keys(state.data.conversations).sort().reverse();
+  const dates = [...new Set([
+    ...Object.keys(state.data.conversations),
+    ...Object.keys(state.data.sentences)
+  ])].sort().reverse();
   if (dates.length === 0) {
     listEl.innerHTML = `<div class="empty-state"><div class="es-icon">📅</div><p>No conversations yet.<br>Start chatting to build your history!</p></div>`;
     return;
@@ -2843,15 +2846,19 @@ function renderHistory() {
 
   listEl.innerHTML = dates.map(d => {
     const convos = state.data.conversations[d] || [];
+    const sents  = state.data.sentences[d] || [];
     const ratings = convos.map(c => parseInt(c.review?.overall_rating) || 0).filter(r => r > 0);
     const avgRating = ratings.length > 0 ? (ratings.reduce((a,b) => a+b, 0) / ratings.length).toFixed(1) : '–';
     const dateObj = new Date(d + 'T12:00:00');
     const label = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const meta = convos.length > 0
+      ? `${convos.length} conversation${convos.length!==1?'s':''} · avg score ${avgRating}`
+      : `${sents.length} sentence${sents.length!==1?'s':''}`;
     return `
       <div class="history-date-item" onclick="showHistoryDay('${d}')">
         <div>
           <div class="hd-date">${label}</div>
-          <div class="hd-meta">${convos.length} conversation${convos.length!==1?'s':''} · avg score ${avgRating}</div>
+          <div class="hd-meta">${meta}</div>
         </div>
         <span class="hd-arrow">›</span>
       </div>
